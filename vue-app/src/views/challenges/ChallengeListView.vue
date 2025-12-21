@@ -23,114 +23,66 @@
       <p v-if="loading">불러오는 중...</p>
   
       <!-- 컨텐츠 -->
-      <div v-else>
-        <!-- 참여한 챌린지 -->
-        <div v-if="joinedChallenges.length" class="mb-10">
-          <h2 class="text-lg font-semibold mb-4">참여한 챌린지</h2>
-  
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div
-              v-for="c in joinedChallenges"
-              :key="c.challengeId"
-              class="rounded-xl border bg-white p-5 shadow-sm
-                     hover:-translate-y-1 transition cursor-pointer"
-              :class="statusStyleMap[c.status]?.border"
-              @click="goDetail(c.challengeId)"
-              >
-              <!-- 🔹 상단 뱃지 영역 -->
-              <div class="flex items-center gap-2 mb-2">
-                  <!-- 상태 뱃지 -->
-                  <span
-                    class="px-2 py-1 text-xs font-medium rounded-full"
-                    :class="statusStyleMap[c.status]?.badge"
-                  >
-                    {{ statusStyleMap[c.status]?.label }}
-                  </span>
-  
-                  <!-- 참여 여부 뱃지 -->
-                  <span
-                    class="px-2 py-1 text-xs font-medium rounded-full
-                          bg-green-100 text-green-700"
-                  >
-                    참여한 챌린지
-                  </span>
-              </div>
-  
-              <h2 class="font-semibold text-lg mb-2">{{ c.title }}</h2>
-  
-              <p class="text-sm text-gray-600 mb-4 line-clamp-2">
-                {{ c.description }}
-              </p>
-  
-              <p class="text-xs text-gray-500 mb-2">
-                {{ c.startDate }} ~ {{ c.endDate }}
-              </p>
-  
-              <div class="flex justify-between items-center mt-4">
-                <span class="text-sm text-gray-500">
-                  참여자 {{ c.participantCount ?? 0 }}명
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-  
-        <!-- 미참여 챌린지 -->
-        <div v-if="notJoinedChallenges.length">
-          <h2 class="text-lg font-semibold mb-4">미참여 챌린지</h2>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div
-              v-for="c in notJoinedChallenges"
-              :key="c.challengeId"
-              class="rounded-xl border bg-white p-5 shadow-sm
-                     hover:-translate-y-1 transition cursor-pointer"
-              :class="statusStyleMap[c.status]?.border"
-              @click="goDetail(c.challengeId)"
-            >
-              <!-- 🔹 상단 뱃지 영역 -->
-              <div class="flex items-center gap-2 mb-2">
-                  <!-- 상태 뱃지 -->
-                  <span
-                    class="px-2 py-1 text-xs font-medium rounded-full"
-                    :class="statusStyleMap[c.status]?.badge"
-                  >
-                    {{ statusStyleMap[c.status]?.label }}
-                  </span>
-  
-                  <!-- 미참여 여부 뱃지 -->
-                  <span
-                    class="px-2 py-1 text-xs font-medium rounded-full
-                          bg-green-100 text-green-700"
-                  >
-                    미참여 챌린지
-                  </span>
-  
-              </div>
-  
-              <h2 class="font-semibold text-lg mb-2">{{ c.title }}</h2>
-  
-              <p class="text-sm text-gray-600 mb-4 line-clamp-2">
-                {{ c.description }}
-              </p>
-  
-              <p class="text-xs text-gray-500 mb-2">
-                {{ c.startDate }} ~ {{ c.endDate }}
-              </p>
-  
-              <div class="flex justify-between items-center mt-4">
-                <span class="text-sm text-gray-500">
-                  참여자 {{ c.participantCount ?? 0 }}명
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+     <div v-if="!loading"
+     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
+  <div
+    v-for="c in challenges"
+    :key="c.challengeId"
+    class="rounded-xl border bg-white p-5 shadow-sm
+           hover:-translate-y-1 transition cursor-pointer"
+    :class="statusStyleMap[c.status]?.border"
+    @click="goDetail(c.challengeId)"
+  >
+
+    <!-- 🔹 상단 뱃지 영역 -->
+    <div class="flex items-center gap-2 mb-2">
+      <!-- 상태 뱃지 -->
+      <span
+        class="px-2 py-1 text-xs font-medium rounded-full"
+        :class="statusStyleMap[c.status]?.badge"
+      >
+        {{ statusStyleMap[c.status]?.label }}
+      </span>
+
+      <!-- 참여 여부 뱃지 (참여한 경우만) -->
+      <span
+        v-if="c.joined"
+        class="px-2 py-1 text-xs font-medium rounded-full
+               bg-green-100 text-green-700"
+      >
+        참여 중
+      </span>
+    </div>
+
+    <!-- 제목 -->
+    <h2 class="font-semibold text-lg mb-2">
+      {{ c.title }}
+    </h2>
+
+    <!-- 설명 -->
+    <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+      {{ c.description }}
+    </p>
+
+    <!-- 기간 -->
+    <p class="text-xs text-gray-500 mb-2">
+      {{ c.startDate }} ~ {{ c.endDate }}
+    </p>
+
+    <!-- 하단 -->
+    <div class="flex justify-between items-center mt-4">
+      <span class="text-sm text-gray-500">
+        참여자 {{ c.participantCount ?? 0 }}명
+      </span>
+    </div>
+
+  </div>
+</div>
+
+</div>
 
         
-      </div>
-    </div>
   </Layout>
 </template>
 
@@ -172,8 +124,6 @@ export default {
     onMounted(async () => {
       await challengeStore.loadChallenges()
       console.log('값 잘 넘어오나 확인', challenges.value)
-      console.log('joinedChallenges:', joinedChallenges.value)
-      console.log('notJoinedChallenges:', notJoinedChallenges.value)
 
     })
 
@@ -188,21 +138,13 @@ export default {
       router.push({ name: 'challengeCreate' })
     }
 
-    const joinedChallenges = computed(() =>
-      challenges.value.filter(c => c.joined)
-    )
-
-    const notJoinedChallenges = computed(() =>
-      challenges.value.filter(c => !c.joined)
-    )
 
     return {
       loading,
       statusStyleMap,
       goDetail,
       goCreate,
-      joinedChallenges,
-      notJoinedChallenges,
+      challenges,
     }
   },
 }
