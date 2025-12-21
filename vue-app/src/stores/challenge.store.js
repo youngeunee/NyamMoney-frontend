@@ -40,17 +40,14 @@ export const useChallengeStore = defineStore('challenge', {
     },
 
     async joinChallenge(challengeId) {
-      if (this.joining) return
-      this.joining = true
       try {
-        await challengeJoin(challengeId)
+        await joinChallengeApi(challengeId)
         await this.loadChallengeDetail(challengeId)
       } catch (e) {
-        console.error('챌린지 참여 실패', e)
-      } finally {
-        this.joining = false
+        throw e   // ⭐ 이게 핵심
       }
     },
+
 
     async cancelChallenge(challengeId) {
       if (this.joining) return
