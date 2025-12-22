@@ -71,10 +71,9 @@
 
           <!-- -------------------- RIGHT (Posts) : 데스크톱에서 2행 span -------------------- -->
           <div class="space-y-6 order-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:row-span-2 lg:h-full lg:min-h-0">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
+            <div class="flex items-start justify-between">
+              <div class="flex flex-col gap-2">
                 <div>
-                  <p class="text-sm text-gray-500">최근 게시글</p>
                   <h2 class="text-2xl font-bold">Posts</h2>
                 </div>
                 <div class="flex items-center gap-2">
@@ -83,10 +82,10 @@
                     :key="tab.key"
                     @click="switchMainTab(tab.key)"
                     :class="[
-                      'px-3 py-1 rounded-full text-sm border transition-colors',
+                      'px-4 py-1.5 rounded-full text-sm border transition-colors',
                       activeMainTab === tab.key
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-white text-gray-600 border-border hover:bg-gray-50'
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     ]"
                     type="button"
                   >
@@ -96,7 +95,7 @@
               </div>
 
               <span class="inline-flex items-center px-3 py-1 rounded-full bg-white border border-border text-sm shadow-sm">
-                총 {{ totalPosts }}개
+                총 {{ activeMainTab === 'commented' ? totalCommented : totalPosts }}개
               </span>
             </div>
 
@@ -553,7 +552,7 @@ const loadingPosts = ref(false)
 
 const mainTabs = [
   { key: 'posts', label: '최근 게시글' },
-  { key: 'commented', label: '내 댓글 단 글' },
+  { key: 'commented', label: '내가 댓글 단 글' },
 ]
 const boardTabs = computed(() => [
   { key: 'all', label: '전체' },
@@ -564,6 +563,7 @@ const activeMainTab = ref('posts')
 const activeBoard = ref('all')
 
 const totalPosts = ref(0)
+const totalCommented = ref(0)
 
 const filteredPosts = computed(() => {
   const source = activeMainTab.value === 'commented' ? commentedPosts.value : posts.value
@@ -660,6 +660,7 @@ const resetPosts = () => {
   cursor.value = null
   hasNext.value = true
   stats.value[0].value = 0
+  totalPosts.value = 0
 }
 
 // 내 댓글 단 글 전용 커서
@@ -670,6 +671,7 @@ const resetCommented = () => {
   commentedPosts.value = []
   commentedCursor.value = null
   commentedHasNext.value = true
+  totalCommented.value = 0
 }
 
 // ✅ 서버는 userId + cursor + size만 받는 구조로 맞춤
@@ -733,6 +735,8 @@ const loadCommentedPosts = async ({ append = false } = {}) => {
       size: commentedPageSize.value
     })
     const data = res?.data ?? res
+
+    totalCommented.value = Number(data?.totalCount ?? 0)
 
     const mapped = (data?.items ?? []).map((c) => ({
       id: c.postId,
