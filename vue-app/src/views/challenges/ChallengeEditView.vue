@@ -31,6 +31,7 @@
             <input
               v-model="form.startDate"
               type="date"
+              :min="minStartDate"
               class="w-full border rounded px-3 py-2"
             />
           </div>
@@ -40,6 +41,7 @@
             <input
               v-model="form.endDate"
               type="date"
+              :min="minEndDate"
               class="w-full border rounded px-3 py-2"
             />
           </div>
@@ -66,7 +68,7 @@
 </template>
 
 <script>
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useChallengeStore } from '@/stores/challenge.store'
@@ -89,6 +91,27 @@ export default {
       startDate: '',
       endDate: '',
     })
+
+    const minStartDate = computed(() => {
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      return tomorrow.toISOString().slice(0, 10)
+    })
+
+    const minEndDate = computed(() => {
+      const base = form.startDate ? new Date(form.startDate) : new Date(minStartDate.value)
+      return base.toISOString().slice(0, 10)
+    })
+
+    watch(
+      () => form.startDate,
+      (val) => {
+        if (!val) return
+        if (!form.endDate || form.endDate < val) {
+          form.endDate = val
+        }
+      }
+    )
 
     onMounted(async () => {
       if (!store.challengeDetail) {
@@ -128,6 +151,8 @@ export default {
       form,
       handleSubmit,
       updating,
+      minStartDate,
+      minEndDate,
     }
   },
 }

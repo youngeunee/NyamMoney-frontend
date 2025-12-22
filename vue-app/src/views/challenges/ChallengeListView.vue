@@ -1,10 +1,10 @@
 <template>
   <Layout>
     <div>
-      <h1 class="text-2xl font-bold mb-6">챌린지 테스트</h1>
+      <h1 class="text-2xl font-bold mb-6">챌린지 리스트</h1>
 
       <!-- 헤더 영역 -->
-      <div class="flex justify-between items-center mb-6">
+      <div class="flex justify-between items-center mb-6 gap-3">
         <button
           @click="goCreate"
           class="inline-flex items-center
@@ -17,6 +17,21 @@
                  transition">
           + 챌린지 생성
         </button>
+
+        <div class="ml-auto">
+          <button
+            @click="toggleActiveOnly"
+            :class="[
+              'px-3 py-1.5 text-sm rounded-full border transition-colors',
+              showActiveOnly
+                ? 'bg-orange-500 text-white border-orange-500'
+                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+            ]"
+            type="button"
+          >
+            진행중만 보기
+          </button>
+        </div>
       </div>
   
       <!-- 로딩 -->
@@ -27,7 +42,7 @@
      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
   <div
-    v-for="c in challenges"
+    v-for="c in visibleChallenges"
     :key="c.challengeId"
     class="rounded-xl border bg-white p-5 shadow-sm
            hover:-translate-y-1 transition cursor-pointer"
@@ -80,6 +95,8 @@
   </div>
 </div>
 
+<div ref="sentinel" class="h-10"></div>
+
 </div>
 
         
@@ -87,7 +104,7 @@
 </template>
 
 <script>
-import { onMounted, computed } from 'vue'
+import { onMounted, onBeforeUnmount, computed, ref, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useChallengeStore } from '@/stores/challenge.store'
 import { useRouter } from 'vue-router'
@@ -97,6 +114,11 @@ export default {
     const router = useRouter()
     const challengeStore = useChallengeStore()
     const { challenges, loading } = storeToRefs(challengeStore)
+    const showActiveOnly = ref(false)
+    const page = ref(0)
+    const size = ref(12)
+    const sentinel = ref(null)
+    let observer = null
 
     const statusStyleMap = {
       UPCOMING: {
@@ -121,10 +143,65 @@ export default {
       },
     }
 
-    onMounted(async () => {
-      await challengeStore.loadChallenges()
-      //console.log('값 잘 넘어오나 확인', challenges.value)
+    const filteredChallenges = computed(() =>
+      showActiveOnly.value
+        ? challenges.value.filter((c) => c.status === 'ACTIVE')
+        : challenges.value
+    )
 
+    const visibleChallenges = computed(() =>
+      filteredChallenges.value.slice(0, (page.value + 1) * size.value)
+    )
+
+    const loadInitial = async () => {
+      if (!challenges.value.length) {
+        await challengeStore.loadChallenges()
+      }
+      page.value = 0
+      await nextTick()
+    }
+
+    const loadMore = () => {
+      if (loading.value) return
+      const total = filteredChallenges.value.length
+      const canLoad = (page.value + 1) * size.value < total
+      if (canLoad) page.value += 1
+    }
+
+    const setupObserver = async () => {
+      await nextTick()
+      if (observer && sentinel.value) observer.unobserve(sentinel.value)
+      observer = null
+      if (!sentinel.value) return
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries?.[0]?.isIntersecting) {
+            loadMore()
+          }
+        },
+        { root: null, rootMargin: '160px', threshold: 0 }
+      )
+      observer.observe(sentinel.value)
+    }
+
+    onMounted(async () => {
+      await loadInitial()
+      await setupObserver()
+    })
+
+    onBeforeUnmount(() => {
+      if (observer && sentinel.value) observer.unobserve(sentinel.value)
+      observer = null
+    })
+
+    watch(challenges, async () => {
+      page.value = 0
+      await nextTick()
+    })
+
+    watch(showActiveOnly, async () => {
+      page.value = 0
+      await nextTick()
     })
 
     const goDetail = (challengeId) => {
@@ -138,13 +215,19 @@ export default {
       router.push({ name: 'challengeCreate' })
     }
 
+    const toggleActiveOnly = () => {
+      showActiveOnly.value = !showActiveOnly.value
+    }
 
     return {
       loading,
       statusStyleMap,
       goDetail,
       goCreate,
-      challenges,
+      visibleChallenges,
+      toggleActiveOnly,
+      showActiveOnly,
+      sentinel,
     }
   },
 }
