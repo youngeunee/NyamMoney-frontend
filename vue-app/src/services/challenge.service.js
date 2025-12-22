@@ -10,7 +10,7 @@ export function fetchChallengeDetail(challengeId) {
 export function challengeJoin(challengeId) {
   return api.post(`/v1/challenges/${challengeId}/join`)}
 // 챌린지 참여 취소
-export function challengeJoinCancle(challengeId) {
+export function challengeCancel(challengeId) {
   return api.delete(`/v1/challenges/${challengeId}/join`)}
   // 챌린지 생성
 export function createChallenge(payload) {

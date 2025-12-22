@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { fetchChallengeList, fetchChallengeDetail, challengeJoin, challengeJoinCancle, 
+import { fetchChallengeList, fetchChallengeDetail, challengeJoin, challengeCancel,
     createChallenge, updateChallenge, deleteChallenge, } from '@/services/challenge.service'
 
 export const useChallengeStore = defineStore('challenge', {
@@ -20,6 +20,7 @@ export const useChallengeStore = defineStore('challenge', {
       try {
         const res = await fetchChallengeList()
         this.challenges = res.data.items
+        console.log('이름확인하기', this.challenges)
       } catch (e) {
         console.error('챌린지 목록 조회 실패', e)
       } finally {
@@ -37,26 +38,31 @@ export const useChallengeStore = defineStore('challenge', {
         this.loading = false
       }
     },
-    // 참여 / 참여취소 분기
-    async toggleJoin(challengeId) {
-      if (this.joining || !this.challengeDetail) return
-      this.joining = true
 
+    async joinChallenge(challengeId) {
       try {
-        if (this.challengeDetail.isJoined) {
-          await challengeJoinCancel(challengeId)
-        } else {
-          await challengeJoin(challengeId)
-        }
-
-        // 항상 상세 재조회로 상태 동기화
+        await joinChallengeApi(challengeId)
         await this.loadChallengeDetail(challengeId)
       } catch (e) {
-        console.error('챌린지 참여/취소 실패', e)
+        throw e   // ⭐ 이게 핵심
+      }
+    },
+
+
+    async cancelChallenge(challengeId) {
+      if (this.joining) return
+      this.joining = true
+      try {
+        await challengeCancel(challengeId)
+        await this.loadChallengeDetail(challengeId)
+      } catch (e) {
+        console.error('챌린지 취소 실패', e)
       } finally {
         this.joining = false
       }
     },
+
+
     // 챌린지 생성
     async createChallenge(payload) {
       this.creating = true

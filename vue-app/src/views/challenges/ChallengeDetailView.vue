@@ -9,25 +9,53 @@
       <p v-if="loading">불러오는 중...</p>
 
     <div v-else-if="challenge" class="rounded-xl border p-6 bg-white">
-        <button
-            v-if="canJoin"
-            :disabled="joining"
-            @click="handleJoin"
-            class="inline-flex items-center
-            px-3 py-1.5
-            text-sm font-medium
-            rounded-full
-            bg-orange-400 hover:bg-orange-500
-            text-white
-            transition
-            disabled:opacity-50"
-            >
-            {{ joinButtonText }}
-        </button>
+        <!-- 버튼 영역 -->
+    <!-- 버튼 영역 -->
+<div class="mt-4 flex gap-2">
 
-    <p v-else class="text-sm text-gray-400 mt-4">
-    참여할 수 없는 챌린지입니다.
+  <!-- ✅ 생성자 전용 안내 -->
+  <p
+    v-if="isCreator"
+    class="text-sm text-gray-500"
+  >
+    내가 만든 챌린지입니다
+  </p>
+
+  <!-- ✅ 생성자가 아닐 때만 참여 UI 판단 -->
+  <template v-else>
+    <!-- 참여하기 -->
+    <button
+      v-if="canJoin"
+      :disabled="joining"
+      @click="handleJoin"
+      class="px-4 py-2 rounded bg-orange-400 hover:bg-orange-500 text-white"
+    >
+      챌린지 참여
+    </button>
+
+    <!-- 참여취소 -->
+    <button
+      v-if="canCancel"
+      :disabled="joining"
+      @click="handleCancel"
+      class="px-4 py-2 rounded border border-red-400 text-red-500 hover:bg-red-50"
+    >
+      참여 취소
+    </button>
+
+    <!-- 참여 불가 상태 -->
+    <p
+      v-if="!canJoin && !canCancel && !isCreator"
+      class="text-sm text-gray-400"
+    >
+      {{ cannotJoinMessage }}
     </p>
+
+  </template>
+
+</div>
+
+
         <h1 class="text-2xl font-bold mb-2">
           {{ challenge.title }}
         </h1>
@@ -45,7 +73,7 @@
         </p>
 
         <span
-          v-if="challenge.isJoined"
+          v-if="challenge.joined"
           class="inline-block px-3 py-1 text-sm rounded-full
                  bg-green-100 text-green-700"
         >
@@ -93,14 +121,14 @@ export default {
   setup(props) {
     const challengeStore = useChallengeStore()
     const authStore = useAuthStore()
-    const { challengeDetail: challenge, loading } = storeToRefs(challengeStore)
+    const { challengeDetail: challenge, loading, joining } = storeToRefs(challengeStore)
     const router = useRouter()
     const route = useRoute()
 
-    const challengeId = route.params.challengeId
+    const challengeId = computed(() => Number(route.params.challengeId))
 
     onMounted(() => {
-      challengeStore.loadChallengeDetail(props.challengeId)
+      challengeStore.loadChallengeDetail(challengeId.value)
     })
 
     const goBack = () => {
@@ -108,26 +136,48 @@ export default {
     }
 
     const canJoin = computed(() => {
-        if (!challenge.value) return false
-        console.log('status:', challenge.value.status)
-        return ['UPCOMING', 'ACTIVE'].includes(challenge.value.status)
-        
+      if (!challenge.value) return false
+      if (isCreator.value) return false   // 생성자 차단
+
+      return (
+        !challenge.value.joined &&
+        ['UPCOMING', 'ACTIVE'].includes(challenge.value.status)
+      )
     })
 
-    const joinButtonText = computed(() => {
-        if (!challenge.value) return ''
-        return challenge.value.isJoined ? '참여 취소' : '챌린지 참여'
+
+    const canCancel = computed(() => {
+      if (!challenge.value) return false
+      if (isCreator.value) return false   // 생성자 차단
+
+      return (
+        challenge.value.joined &&
+        ['UPCOMING', 'ACTIVE'].includes(challenge.value.status)
+      )
     })
 
-    const joinButtonClass = computed(() => {
-        return challenge.value?.isJoined
-        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        : 'bg-orange-500 text-white hover:bg-orange-600'
-    })
 
-    const handleJoin = () => {
-        challengeStore.toggleJoin(challenge.value.challengeId)
+
+    const handleJoin = async () => {
+      try {
+        await challengeStore.joinChallenge(challenge.value.challengeId)
+      } catch (e) {
+        alert(e.response?.data?.message || '챌린지 참여에 실패했습니다.')
+      }
     }
+
+
+    const handleCancel = () => {
+      if (challenge.value.status === 'ACTIVE') {
+        const ok = confirm(
+          '진행 중인 챌린지를 취소하면 실패 처리되며 다시 참여할 수 없습니다.\n정말 취소하시겠습니까?'
+        )
+        if (!ok) return
+      }
+      challengeStore.cancelChallenge(challenge.value.challengeId)
+    }
+
+
 
     const goEdit = () => {
         //const challengeId = challenge.value.challengeId
@@ -156,20 +206,46 @@ export default {
         return
       }
 
-      await challengeStore.deleteChallenge(challengeId)
+      await challengeStore.deleteChallenge(challengeId.value)
 
       // 삭제 후 목록으로 이동 (back 아님)
       router.replace({ name: 'Projects' })
     }
+
+    // 참여 신청 안 되는
+    const cannotJoinMessage = computed(() => {
+      if (!challenge.value) return ''
+      // 생성자는 별도 처리
+      if (isCreator.value) {
+        return '내가 만든 챌린지입니다.'
+      }
+      // 이미 종료됨
+      if (challenge.value.status === 'ENDED') {
+        return '이미 종료된 챌린지입니다.'
+      }
+      // 삭제(마감)됨
+      if (challenge.value.status === 'CLOSED') {
+        return '마감된 챌린지입니다.'
+      }
+      // 진행 중 + 이미 취소(실패)
+      if (
+        challenge.value.status === 'ACTIVE' &&
+        !challenge.value.joined
+      ) {
+        return '진행 중 취소한 챌린지는 다시 참여할 수 없습니다.'
+      }
+      return '참여할 수 없는 챌린지입니다.'
+    })
 
 
 
 
     return {
       challenge, loading, goBack,
-      canJoin, joinButtonText, joinButtonClass, handleJoin,
+      canJoin, canCancel, handleJoin, handleCancel, joining,
       goEdit, isCreator,
       canDelete, handleDelete,
+      cannotJoinMessage,
     }
   },
 }
