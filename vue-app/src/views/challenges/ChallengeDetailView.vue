@@ -86,18 +86,53 @@
         class="text-sm text-gray-400"
         >
         수정
-    </button>
-    <button
-      v-if="canDelete"
-      @click="handleDelete"
-      class="text-sm text-red-500 hover:text-red-600"
-    >
-      삭제
-    </button>
-
-
+      </button>
+      <button
+        v-if="canDelete"
+        @click="handleDelete"
+        class="text-sm text-red-500 hover:text-red-600"
+      >
+        삭제
+      </button>
+  
+      <!-- 참여자 목록 -->
+    <div class="mt-10">
+      <h2 class="text-lg font-semibold mb-4">
+        챌린지 참여자
+      </h2>
+      
+      <p v-if="safeParticipants.length === 0" class="text-sm text-gray-400">
+        아직 참여자가 없습니다.
+      </p>
+      
+      <ul v-else class="space-y-3">
+        <li
+          v-for="p in safeParticipants"
+          :key="p.userId"
+          class="flex justify-between items-center border rounded-lg px-4 py-3"
+        >
+          <div>
+            <p class="font-medium">{{ p.nickname }}</p>
+            <p class="text-xs text-gray-400">
+              참여일 {{ p.joinedAt }}
+            </p>
+          </div>
+      
+          <div class="text-right">
+            <p class="text-sm">
+              진행률 {{ Math.round(p.progress * 100) }}%
+            </p>
+            <p class="text-xs text-gray-500">
+              {{ p.status }}
+            </p>
+          </div>
+        </li>
+      </ul>
     </div>
+    
+      </div>
   </Layout>
+
 </template>
 
 <script>
@@ -121,14 +156,16 @@ export default {
   setup(props) {
     const challengeStore = useChallengeStore()
     const authStore = useAuthStore()
-    const { challengeDetail: challenge, loading, joining } = storeToRefs(challengeStore)
+    const { challengeDetail: challenge, loading, joining, participants } = storeToRefs(challengeStore)
+    const safeParticipants = computed(() => participants.value || [])
     const router = useRouter()
     const route = useRoute()
 
     const challengeId = computed(() => Number(route.params.challengeId))
 
-    onMounted(() => {
-      challengeStore.loadChallengeDetail(challengeId.value)
+    onMounted(async() => {
+      await challengeStore.loadChallengeDetail(challengeId.value)
+      await challengeStore.loadChallengeParticipants(challengeId.value)
     })
 
     const goBack = () => {
@@ -246,6 +283,7 @@ export default {
       goEdit, isCreator,
       canDelete, handleDelete,
       cannotJoinMessage,
+      safeParticipants,
     }
   },
 }

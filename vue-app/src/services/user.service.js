@@ -39,3 +39,10 @@ export const fetchUserPosts = ({ userId, cursor = null, size = 5 }) => {
 
   return api.get(`/v1/users/${userId}/posts`, { params })
 }
+
+export const fetchUserComments = ({ userId, cursor = null, size = 5 }) => {
+  const params = {}
+  if (cursor) params.cursor = cursor
+  if (size) params.size = size
+  return api.get(`/v1/users/${userId}/comments`, { params })
+}

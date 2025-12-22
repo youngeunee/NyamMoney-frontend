@@ -20,6 +20,9 @@ import BoardPostsView from '../views/boards/BoardPostsView.vue'
 import PostCreateView from '../views/boards/PostCreateView.vue'
 import UserProfileView from '../views/users/UserProfileView.vue'
 import ChallengeListView from '../views/challenges/ChallengeListView.vue'
+import TransactionCreateView from '../views/TransactionCreateView.vue'
+import TransactionDetailView from '../views/TransactionDetailView.vue'
+import TransactionEditView from '../views/TransactionEditView.vue'
 
 const routes = [
   // 루트 → 로그인으로 리다이렉트
@@ -38,6 +41,9 @@ const routes = [
   { path: '/analytics', name: 'Analytics', component: Analytics, meta: { requiresAuth: true } },
   { path: '/projects', name: 'Projects', component: Projects, meta: { requiresAuth: true } },
   { path: '/transactions', name: 'Transactions', component: Transactions, meta: { requiresAuth: true } },
+  { path: '/transactions/new', name: 'TransactionCreate', component: TransactionCreateView, meta: { requiresAuth: true } },
+  { path: '/transactions/:transactionId', name: 'TransactionDetail', component: TransactionDetailView, meta: { requiresAuth: true }, props: true },
+  { path: '/transactions/:transactionId/edit', name: 'TransactionEdit', component: TransactionEditView, meta: { requiresAuth: true }, props: true },
   { path: '/invoices', name: 'Invoices', component: Invoices, meta: { requiresAuth: true } },
   { path: '/payments', name: 'Payments', component: Payments, meta: { requiresAuth: true } },
   { path: '/members', name: 'Members', component: Members, meta: { requiresAuth: true } },
