@@ -1,25 +1,21 @@
 <template>
   <div>
-    <h1 class="text-xl font-bold mb-4">{{ title }}</h1>
+    <div class="flex flex-wrap items-center gap-3 mb-6">
+      <div class="space-y-1">
+        <h1 class="text-2xl font-bold text-gray-800">{{ title }}</h1>
+        <p class="text-sm text-gray-500">게시글을 최신순/댓글순/좋아요순으로 살펴보세요.</p>
+      </div>
 
-    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <button
-        class="px-4 py-2 bg-orange-500 text-white rounded"
-        @click="goNewPost"
-      >
-        글쓰기
-      </button>
-
-      <div class="flex items-center gap-2 ml-auto">
+      <div class="ml-auto flex items-center gap-2">
         <span class="text-sm text-gray-500">정렬</span>
         <button
           v-for="opt in sortOptions"
           :key="opt.value"
           @click="selectedSort = opt.value"
           :class="[
-            'px-3 py-1 rounded-full text-sm border transition-colors',
+            'px-3 py-1.5 rounded-full text-sm border transition-colors',
             selectedSort === opt.value
-              ? 'bg-orange-500 text-white border-orange-500'
+              ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
               : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
           ]"
           type="button"
@@ -27,6 +23,14 @@
           {{ opt.label }}
         </button>
       </div>
+
+      <button
+        v-if="canCreate"
+        class="px-4 py-2 bg-orange-500 text-white rounded-full shadow-sm hover:bg-orange-600 transition"
+        @click="goNewPost"
+      >
+        글쓰기
+      </button>
     </div>
 
     <p v-if="loading && posts.length === 0">게시글을 불러오는 중...</p>
@@ -36,15 +40,23 @@
         v-for="post in posts"
         :key="post.postId"
         @click="goDetail(post.postId)"
-        class="mb-3 p-4 rounded bg-white shadow cursor-pointer"
+        class="p-4 rounded-xl bg-white border border-gray-200 shadow-sm cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition"
       >
-        <h2 class="font-semibold">{{ post.title }}</h2>
-        <p class="text-sm text-gray-500">
-          댓글 {{ post.commentCount }} · 좋아요 {{ post.likeCount }}
-        </p>
-        <p class="text-xs text-gray-400">
-          {{ post.createdAt }}
-        </p>
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1">
+            <h2 class="font-semibold text-gray-900 line-clamp-1">{{ post.title || '제목 없음' }}</h2>
+            <p class="text-xs text-gray-500">작성자: {{ post.author?.nickname || '익명' }}</p>
+            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+              <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-100">
+                댓글 {{ post.commentCount }}
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                좋아요 {{ post.likeCount }}
+              </span>
+            </div>
+          </div>
+          <span class="text-xs text-gray-400 whitespace-nowrap">{{ post.createdAt }}</span>
+        </div>
       </li>
     </ul>
 
@@ -60,7 +72,7 @@
 </template>
 
 <script>
-import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useBoardStore } from '@/stores/board.store'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
@@ -85,6 +97,7 @@ export default {
 
     const { posts, loading, hasNext } = storeToRefs(boardStore)
     const { isAuthenticated } = storeToRefs(authStore)
+    const userRole = computed(() => authStore.role)
 
     const sortOptions = [
       { value: 'comments', label: '댓글순' },
@@ -176,7 +189,17 @@ export default {
       })
     }
 
+    const isNoticeBoard = computed(() =>
+      Number(props.boardId) === 4 ||
+      (props.title && String(props.title).includes('공지'))
+    )
+    const canCreate = computed(() =>
+      isAuthenticated.value &&
+      (!isNoticeBoard.value || userRole.value === 'ADMIN')
+    )
+
     const goNewPost = () => {
+      if (!canCreate.value) return
       router.push({
         name: 'newPost',
         params: {
@@ -193,6 +216,7 @@ export default {
       sentinel,
       goDetail,
       goNewPost,
+      canCreate,
     }
   },
 }
