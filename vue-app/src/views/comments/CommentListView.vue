@@ -33,9 +33,22 @@
 
           <!-- 일반 화면 -->
           <div v-else>
-            <p class="text-sm font-medium">
-              {{ comment.author?.nickname || '익명' }}
-            </p>
+            <div class="flex items-center gap-2 text-sm font-medium">
+              <button
+                class="text-gray-800 hover:underline"
+                @click="toggleProfile(comment.commentId)"
+              >
+                {{ comment.author?.nickname || '익명' }}
+              </button>
+            </div>
+            <div v-if="profileTargetCommentId === comment.commentId" class="mb-1">
+              <button
+                class="text-xs text-orange-600 hover:underline"
+                @click="goProfile(comment.author?.userId)"
+              >
+                프로필 보기 →
+              </button>
+            </div>
             <p class="text-sm">{{ comment.content }}</p>
 
             <!-- 권한 확인해서 수정/삭제 -->
@@ -54,12 +67,14 @@
           </div>
         </li>
       </ul>
+      <div ref="commentBottom" class="comment-scroll-bottom"></div>
     </template>
 
     <!-- 댓글 입력 폼 (댓글 0개여도 항상 노출) -->
     <div class="mt-6">
       <CommentCreateForm v-if="isAuthenticated"
-        :boardId="boardId" :postId="postId" />
+        :boardId="boardId" :postId="postId"
+        @submitted="handleCommentSubmitted" />
       <p v-else class="text-sm text-gray-400">
         로그인 후 댓글을 작성할 수 있습니다.
       </p>
@@ -87,6 +102,7 @@ import { storeToRefs } from 'pinia'
 import { useCommentStore } from '@/stores/comment.store'
 import { useAuthStore } from '@/stores/auth'
 import CommentCreateForm from '@/components/comments/CommentForm.vue'
+import { useRouter } from 'vue-router'
 
 export default {
   components: {
@@ -106,9 +122,12 @@ export default {
 
   setup(props) {
     const authStore = useAuthStore()
+    const router = useRouter()
     const commentStore = useCommentStore()
     const { comments, loading, page, totalPages, totalElements } = storeToRefs(commentStore)
     const commentTop = ref(null)
+    const commentBottom = ref(null)
+    const profileTargetCommentId = ref(null)
     
     // 수정 중인 댓글
     const editingCommentId = ref(null)
@@ -133,6 +152,28 @@ export default {
       commentTop.value?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
+      })
+    }
+
+    const handleCommentSubmitted = async (targetPage) => {
+      const currentY = window.scrollY
+      await commentStore.loadComments(props.boardId, props.postId, targetPage ?? page.value)
+      await nextTick()
+      window.scrollTo({
+        top: currentY,
+        behavior: 'auto',
+      })
+    }
+
+    const toggleProfile = (commentId) => {
+      profileTargetCommentId.value = profileTargetCommentId.value === commentId ? null : commentId
+    }
+
+    const goProfile = (userId) => {
+      if (!userId) return
+      router.push({
+        name: 'UserProfile',
+        query: { userId },
       })
     }
 
@@ -171,9 +212,10 @@ export default {
 
     return {
       comments, loading, page,
-      totalPages, totalElements, goPage, commentTop,
+      totalPages, totalElements, goPage, commentTop, commentBottom,
       editingCommentId, editingContent, startEdit, cancelEdit, saveEdit,
-      isMyComment, isAuthenticated, deleteComment,
+      isMyComment, isAuthenticated, deleteComment, handleCommentSubmitted,
+      profileTargetCommentId, toggleProfile, goProfile,
     }
   },
 }
@@ -182,5 +224,9 @@ export default {
 <style lang="css">
   .comment-scroll-anchor {
     scroll-margin-top: 100px;
+  }
+
+  .comment-scroll-bottom {
+    height: 1px;
   }
 </style>

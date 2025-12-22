@@ -25,6 +25,7 @@ import { useCommentStore } from '@/stores/comment.store'
 import { storeToRefs } from 'pinia'
 
 export default {
+  emits: ['submitted'],
   props: {
     boardId: {
       type: [Number, String],
@@ -36,16 +37,21 @@ export default {
     },
   },
 
-  setup(props) {
+  setup(props, { emit }) {
     const commentStore = useCommentStore()
     const { creating } = storeToRefs(commentStore)
 
     const content = ref('')
 
     const submit = async () => {
-        console.log('댓글 등록 버튼 클릭')
-      await commentStore.submitComment(props.boardId, props.postId, content.value)
+      const targetPage = await commentStore.submitComment(
+        props.boardId,
+        props.postId,
+        content.value
+      )
+      if (targetPage === undefined) return
       content.value = '' // 입력창 초기화
+      emit('submitted', targetPage)
     }
 
     return {

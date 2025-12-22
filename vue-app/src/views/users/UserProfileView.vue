@@ -71,26 +71,39 @@
 
           <!-- -------------------- RIGHT (Posts) : 데스크톱에서 2행 span -------------------- -->
           <div class="space-y-6 order-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:row-span-2 lg:h-full lg:min-h-0">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-gray-500">최근 게시글</p>
-                <h2 class="text-2xl font-bold">Posts</h2>
-              </div>
+            <div class="flex flex-col gap-2">
+              <h2 class="text-2xl font-bold">Posts</h2>
+              <div class="flex items-center justify-between gap-4 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <button
+                    v-for="tab in mainTabs"
+                    :key="tab.key"
+                    @click="switchMainTab(tab.key)"
+                    :class="[
+                      'px-4 py-1.5 rounded-full text-sm border transition-colors',
+                      activeMainTab === tab.key
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    ]"
+                    type="button"
+                  >
+                    {{ tab.label }}
+                  </button>
+                </div>
 
-              <span class="inline-flex items-center px-3 py-1 rounded-full bg-white border border-border text-sm shadow-sm">
-                총 {{ totalPosts }}개
-              </span>
+              </div>
             </div>
 
             <div class="space-y-4">
-              <div class="flex flex-wrap gap-2">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <div class="flex flex-wrap gap-2">
                 <button
-                  v-for="tab in tabs"
+                  v-for="tab in boardTabs"
                   :key="tab.key"
-                  @click="activeTab = tab.key"
+                  @click="switchBoard(tab.key)"
                   :class="[
                     'px-3 py-1 rounded-full text-sm border transition-colors',
-                    activeTab === tab.key
+                    activeBoard === tab.key
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-white text-gray-600 border-border hover:bg-gray-50'
                   ]"
@@ -99,11 +112,15 @@
                   {{ tab.label }}
                 </button>
               </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-white border border-border text-sm shadow-sm">
+                  총 {{ activeMainTab === 'commented' ? totalCommented : totalPosts }}개
+                </span>
+              </div>
 
               <div class="border border-border bg-white rounded-lg shadow-sm h-full lg:min-h-0 flex flex-col">
                 <div class="p-4 flex items-center justify-between">
                   <p class="text-sm text-gray-500">
-                    {{ activeTab === 'all' ? '전체' : tabs.find(t => t.key === activeTab)?.label }} 게시글
+                    {{ activeBoard === 'all' ? '전체' : boardTabs.find(t => t.key === activeBoard)?.label }} 게시글
                   </p>
                 </div>
 
@@ -112,7 +129,7 @@
                   class="max-h-[520px] lg:max-h-[640px] overflow-y-auto px-4 pb-4 space-y-3"
                 >
                   <UiCard
-                    v-for="post in filteredPosts"
+                    v-for="post in visibleItems"
                     :key="post.id"
                     wrapperClass="border border-border bg-white shadow-sm cursor-pointer"
                     @click="goPostDetail(post)"
@@ -151,6 +168,51 @@
                   <div ref="sentinel" class="h-8"></div>
                 </div>
               </div>
+            </div>
+
+            <!-- 내가 참여한 챌린지: Posts 아래로 이동 -->
+            <div class="space-y-3">
+              <div>
+                <h2 class="text-2xl font-bold">Challenge</h2>
+              </div>
+              <UiCard wrapperClass="border border-border bg-white shadow-sm">
+                <div class="space-y-3">
+                  <div v-if="!myChallenges.length" class="text-sm text-gray-500">
+                    참여 중인 챌린지가 없습니다.
+                  </div>
+
+                  <div v-else class="space-y-2">
+                    <div
+                      v-for="c in myChallenges"
+                      :key="c.challengeId"
+                      class="flex items-center justify-between p-3 rounded-lg border border-border bg-gray-50"
+                    >
+                      <div class="space-y-1">
+                        <p class="text-sm font-medium">{{ c.title }}</p>
+                        <div class="flex items-center gap-2">
+                          <span
+                            class="px-2 py-0.5 text-xs rounded-full"
+                            :class="statusStyleMap[c.status]?.badge"
+                          >
+                            {{ statusStyleMap[c.status]?.label }}
+                          </span>
+
+                          <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">
+                            참여 중
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        class="text-xs text-primary hover:underline"
+                        @click="goChallengeDetail(c.challengeId)"
+                      >
+                        보기 →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </UiCard>
             </div>
           </div>
 
@@ -221,7 +283,7 @@ import { computed, reactive, ref, watch, onMounted, onBeforeUnmount, nextTick } 
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
-import { fetchUser, fetchUserPosts } from '@/services/user.service'
+import { fetchUser, fetchUserPosts, fetchUserComments } from '@/services/user.service'
 import {
   requestFollow,
   unfollow,
@@ -233,6 +295,39 @@ import {
   fetchFollowings,
 } from '@/services/follow.service'
 import { fetchBoards } from '@/services/board.service'
+
+// 참여 중인 챌린지 출력 ------------------------------------------ 챌린지
+import { useChallengeStore } from '@/stores/challenge.store'
+const challengeStore = useChallengeStore()
+const { challenges } = storeToRefs(challengeStore)
+const myChallenges = computed(() =>
+  challenges.value.filter((c) => c.joined)
+)
+const statusStyleMap = {
+  UPCOMING: {
+    badge: 'bg-blue-100 text-blue-700',
+    label: '곧 시작',
+  },
+  ACTIVE: {
+    badge: 'bg-green-100 text-green-700',
+    label: '진행 중',
+  },
+  ENDED: {
+    badge: 'bg-gray-100 text-gray-500',
+    label: '종료됨',
+  },
+  CLOSED: {
+    badge: 'bg-gray-100 text-gray-500',
+    label: '취소됨',
+  },
+}
+const goChallengeDetail = (challengeId) => {
+  router.push({
+    name: 'challengeDetail',
+    params: { challengeId },
+  })
+}
+// --------------- 여기까지 챌린지 --------------------
 
 import { useAuthStore } from '@/stores/auth'
 import Layout from '../../components/Layout.vue'
@@ -416,6 +511,34 @@ const goPostDetail = (post) => {
   })
 }
 
+const switchMainTab = async (key) => {
+  activeMainTab.value = key
+  if (key === 'commented') {
+    if (!commentedPosts.value.length) {
+      await loadCommentedPosts({ append: false })
+    }
+  } else {
+    if (!posts.value.length) {
+      await loadPosts({ append: false })
+    }
+  }
+  await setupObserver()
+}
+
+const switchBoard = async (key) => {
+  activeBoard.value = key
+  if (activeMainTab.value === 'commented') {
+    if (!commentedPosts.value.length) {
+      await loadCommentedPosts({ append: false })
+    }
+  } else {
+    if (!posts.value.length) {
+      await loadPosts({ append: false })
+    }
+  }
+  await setupObserver()
+}
+
 // -------------------- Stats / boards / posts --------------------
 const stats = ref([
   { label: 'Posts', value: 0 },
@@ -424,22 +547,32 @@ const stats = ref([
 ])
 
 const posts = ref([])
+const commentedPosts = ref([])
 const boards = ref([])
 const loadingPosts = ref(false)
 
-const tabs = computed(() => [
+const mainTabs = [
+  { key: 'posts', label: '최근 게시글' },
+  { key: 'commented', label: '내가 댓글 단 글' },
+]
+const boardTabs = computed(() => [
   { key: 'all', label: '전체' },
-  ...boards.value.map((b) => ({ key: String(b.boardId), label: b.name }))
+  ...boards.value.map((b) => ({ key: String(b.boardId), label: b.name })),
 ])
 
-const activeTab = ref('all')
+const activeMainTab = ref('posts')
+const activeBoard = ref('all')
 
 const totalPosts = ref(0)
+const totalCommented = ref(0)
 
 const filteredPosts = computed(() => {
-  if (activeTab.value === 'all') return posts.value
-  return posts.value.filter((post) => String(post.board) === String(activeTab.value))
+  const source = activeMainTab.value === 'commented' ? commentedPosts.value : posts.value
+  if (activeBoard.value === 'all') return source
+  return source.filter((post) => String(post.board) === String(activeBoard.value))
 })
+
+const visibleItems = computed(() => filteredPosts.value)
 
 const loadedCount = computed(() => filteredPosts.value.length)
 
@@ -451,7 +584,7 @@ const boardActivity = computed(() => {
   const source =
     boards.value.length > 0
       ? boards.value.map((b) => ({ label: b.name, count: b.postCount || 0 }))
-      : tabs.value
+      : boardTabs.value
           .filter((tab) => tab.key !== 'all')
           .map((tab) => ({
             label: tab.label,
@@ -528,6 +661,18 @@ const resetPosts = () => {
   cursor.value = null
   hasNext.value = true
   stats.value[0].value = 0
+  totalPosts.value = 0
+}
+
+// 내 댓글 단 글 전용 커서
+const commentedCursor = ref(null)
+const commentedHasNext = ref(true)
+const commentedPageSize = ref(5)
+const resetCommented = () => {
+  commentedPosts.value = []
+  commentedCursor.value = null
+  commentedHasNext.value = true
+  totalCommented.value = 0
 }
 
 // ✅ 서버는 userId + cursor + size만 받는 구조로 맞춤
@@ -578,6 +723,47 @@ const loadPosts = async ({ append = false } = {}) => {
   }
 }
 
+const loadCommentedPosts = async ({ append = false } = {}) => {
+  if (loadingPosts.value) return
+  if (!targetUserId.value) return
+  if (append && !commentedHasNext.value) return
+
+  loadingPosts.value = true
+  try {
+    const res = await fetchUserComments({
+      userId: String(targetUserId.value),
+      cursor: append ? commentedCursor.value : null,
+      size: commentedPageSize.value
+    })
+    const data = res?.data ?? res
+
+    totalCommented.value = Number(data?.totalCount ?? 0)
+
+    const mapped = (data?.items ?? []).map((c) => ({
+      id: c.postId,
+      board: String(c.boardId),
+      boardName: c.boardName ?? '',
+      title: c.postTitle ?? '(제목 없음)',
+      excerpt: c.content ?? '',
+      date: c.createdAt ?? '',
+      likes: c.likeCount ?? 0,
+      comments: c.commentCount ?? 0,
+    }))
+
+    if (append) commentedPosts.value.push(...mapped)
+    else commentedPosts.value = mapped
+
+    commentedCursor.value = data?.nextCursor ?? null
+    commentedHasNext.value = !!data?.hasNext
+  } catch (err) {
+    console.error('Failed to load commented posts', err)
+    if (!append) commentedPosts.value = []
+    commentedHasNext.value = false
+  } finally {
+    loadingPosts.value = false
+  }
+}
+
 const loadBoards = async () => {
   try {
     const res = await fetchBoards()
@@ -604,7 +790,11 @@ const setupObserver = async () => {
   io = new IntersectionObserver(
     (entries) => {
       if (entries?.[0]?.isIntersecting) {
-        loadPosts({ append: true })
+        if (activeMainTab.value === 'commented') {
+          loadCommentedPosts({ append: true })
+        } else {
+          loadPosts({ append: true })
+        }
       }
     },
     {
@@ -627,11 +817,6 @@ onBeforeUnmount(() => {
 })
 
 // 탭 바뀌면: 목록 초기화 + 첫 페이지 + observer 재설정(스크롤 루트가 유지돼도 안전)
-watch(activeTab, async () => {
-  resetPosts()
-  await loadPosts({ append: false })
-  await setupObserver()
-})
 
 // targetUserId 바뀌면: 전체 로드 후 posts 초기 로드
 watch(
@@ -645,8 +830,13 @@ watch(
     await loadBoards()
     await loadFollowCounts()
 
-    activeTab.value = 'all'
+    // ✅ 여기 추가
+    await challengeStore.loadChallenges()
+
+    activeMainTab.value = 'posts'
+    activeBoard.value = 'all'
     resetPosts()
+    resetCommented()
     await loadPosts({ append: false })
     await setupObserver()
   },
