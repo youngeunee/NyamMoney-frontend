@@ -71,26 +71,43 @@
 
           <!-- -------------------- RIGHT (Posts) : 데스크톱에서 2행 span -------------------- -->
           <div class="space-y-6 order-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:row-span-2 lg:h-full lg:min-h-0">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-gray-500">최근 게시글</p>
-                <h2 class="text-2xl font-bold">Posts</h2>
+            <div class="flex items-start justify-between">
+              <div class="flex flex-col gap-2">
+                <div>
+                  <h2 class="text-2xl font-bold">Posts</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    v-for="tab in mainTabs"
+                    :key="tab.key"
+                    @click="switchMainTab(tab.key)"
+                    :class="[
+                      'px-4 py-1.5 rounded-full text-sm border transition-colors',
+                      activeMainTab === tab.key
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    ]"
+                    type="button"
+                  >
+                    {{ tab.label }}
+                  </button>
+                </div>
               </div>
 
               <span class="inline-flex items-center px-3 py-1 rounded-full bg-white border border-border text-sm shadow-sm">
-                총 {{ totalPosts }}개
+                총 {{ activeMainTab === 'commented' ? totalCommented : totalPosts }}개
               </span>
             </div>
 
             <div class="space-y-4">
               <div class="flex flex-wrap gap-2">
                 <button
-                  v-for="tab in tabs"
+                  v-for="tab in boardTabs"
                   :key="tab.key"
-                  @click="switchTab(tab.key)"
+                  @click="switchBoard(tab.key)"
                   :class="[
                     'px-3 py-1 rounded-full text-sm border transition-colors',
-                    activeTab === tab.key
+                    activeBoard === tab.key
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-white text-gray-600 border-border hover:bg-gray-50'
                   ]"
@@ -103,7 +120,7 @@
               <div class="border border-border bg-white rounded-lg shadow-sm h-full lg:min-h-0 flex flex-col">
                 <div class="p-4 flex items-center justify-between">
                   <p class="text-sm text-gray-500">
-                    {{ activeTab === 'all' ? '전체' : tabs.find(t => t.key === activeTab)?.label }} 게시글
+                    {{ activeBoard === 'all' ? '전체' : boardTabs.find(t => t.key === activeBoard)?.label }} 게시글
                   </p>
                 </div>
 
@@ -497,14 +514,30 @@ const goPostDetail = (post) => {
   })
 }
 
-const switchTab = async (key) => {
-  activeTab.value = key
-  resetPosts()
-  resetCommented()
+const switchMainTab = async (key) => {
+  activeMainTab.value = key
   if (key === 'commented') {
-    await loadCommentedPosts({ append: false })
+    if (!commentedPosts.value.length) {
+      await loadCommentedPosts({ append: false })
+    }
   } else {
-    await loadPosts({ append: false })
+    if (!posts.value.length) {
+      await loadPosts({ append: false })
+    }
+  }
+  await setupObserver()
+}
+
+const switchBoard = async (key) => {
+  activeBoard.value = key
+  if (activeMainTab.value === 'commented') {
+    if (!commentedPosts.value.length) {
+      await loadCommentedPosts({ append: false })
+    }
+  } else {
+    if (!posts.value.length) {
+      await loadPosts({ append: false })
+    }
   }
   await setupObserver()
 }
@@ -521,20 +554,25 @@ const commentedPosts = ref([])
 const boards = ref([])
 const loadingPosts = ref(false)
 
-const tabs = computed(() => [
+const mainTabs = [
   { key: 'posts', label: '최근 게시글' },
-  { key: 'commented', label: '내 댓글 단 글' },
+  { key: 'commented', label: '내가 댓글 단 글' },
+]
+const boardTabs = computed(() => [
+  { key: 'all', label: '전체' },
   ...boards.value.map((b) => ({ key: String(b.boardId), label: b.name })),
 ])
 
-const activeTab = ref('posts')
+const activeMainTab = ref('posts')
+const activeBoard = ref('all')
 
 const totalPosts = ref(0)
+const totalCommented = ref(0)
 
 const filteredPosts = computed(() => {
-  if (activeTab.value === 'posts') return posts.value
-  if (activeTab.value === 'commented') return commentedPosts.value
-  return posts.value.filter((post) => String(post.board) === String(activeTab.value))
+  const source = activeMainTab.value === 'commented' ? commentedPosts.value : posts.value
+  if (activeBoard.value === 'all') return source
+  return source.filter((post) => String(post.board) === String(activeBoard.value))
 })
 
 const visibleItems = computed(() => filteredPosts.value)
@@ -549,7 +587,7 @@ const boardActivity = computed(() => {
   const source =
     boards.value.length > 0
       ? boards.value.map((b) => ({ label: b.name, count: b.postCount || 0 }))
-      : tabs.value
+      : boardTabs.value
           .filter((tab) => tab.key !== 'all')
           .map((tab) => ({
             label: tab.label,
@@ -626,6 +664,7 @@ const resetPosts = () => {
   cursor.value = null
   hasNext.value = true
   stats.value[0].value = 0
+  totalPosts.value = 0
 }
 
 // 내 댓글 단 글 전용 커서
@@ -636,6 +675,7 @@ const resetCommented = () => {
   commentedPosts.value = []
   commentedCursor.value = null
   commentedHasNext.value = true
+  totalCommented.value = 0
 }
 
 // ✅ 서버는 userId + cursor + size만 받는 구조로 맞춤
@@ -700,6 +740,8 @@ const loadCommentedPosts = async ({ append = false } = {}) => {
     })
     const data = res?.data ?? res
 
+    totalCommented.value = Number(data?.totalCount ?? 0)
+
     const mapped = (data?.items ?? []).map((c) => ({
       id: c.postId,
       board: String(c.boardId),
@@ -751,7 +793,7 @@ const setupObserver = async () => {
   io = new IntersectionObserver(
     (entries) => {
       if (entries?.[0]?.isIntersecting) {
-        if (activeTab.value === 'commented') {
+        if (activeMainTab.value === 'commented') {
           loadCommentedPosts({ append: true })
         } else {
           loadPosts({ append: true })
@@ -778,16 +820,6 @@ onBeforeUnmount(() => {
 })
 
 // 탭 바뀌면: 목록 초기화 + 첫 페이지 + observer 재설정(스크롤 루트가 유지돼도 안전)
-watch(activeTab, async () => {
-  resetPosts()
-  resetCommented()
-  if (activeTab.value === 'commented') {
-    await loadCommentedPosts({ append: false })
-  } else {
-    await loadPosts({ append: false })
-  }
-  await setupObserver()
-})
 
 // targetUserId 바뀌면: 전체 로드 후 posts 초기 로드
 watch(
@@ -804,8 +836,10 @@ watch(
     // ✅ 여기 추가
     await challengeStore.loadChallenges()
 
-    activeTab.value = 'all'
+    activeMainTab.value = 'posts'
+    activeBoard.value = 'all'
     resetPosts()
+    resetCommented()
     await loadPosts({ append: false })
     await setupObserver()
   },
