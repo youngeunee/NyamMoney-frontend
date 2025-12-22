@@ -516,24 +516,28 @@ const goPostDetail = (post) => {
 
 const switchMainTab = async (key) => {
   activeMainTab.value = key
-  resetPosts()
-  resetCommented()
   if (key === 'commented') {
-    await loadCommentedPosts({ append: false })
+    if (!commentedPosts.value.length) {
+      await loadCommentedPosts({ append: false })
+    }
   } else {
-    await loadPosts({ append: false })
+    if (!posts.value.length) {
+      await loadPosts({ append: false })
+    }
   }
   await setupObserver()
 }
 
 const switchBoard = async (key) => {
   activeBoard.value = key
-  resetPosts()
-  resetCommented()
   if (activeMainTab.value === 'commented') {
-    await loadCommentedPosts({ append: false })
+    if (!commentedPosts.value.length) {
+      await loadCommentedPosts({ append: false })
+    }
   } else {
-    await loadPosts({ append: false })
+    if (!posts.value.length) {
+      await loadPosts({ append: false })
+    }
   }
   await setupObserver()
 }
