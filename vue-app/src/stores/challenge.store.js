@@ -41,7 +41,7 @@ export const useChallengeStore = defineStore('challenge', {
 
     async joinChallenge(challengeId) {
       try {
-        await joinChallengeApi(challengeId)
+        await challengeJoin(challengeId)
         await this.loadChallengeDetail(challengeId)
       } catch (e) {
         throw e   // ⭐ 이게 핵심

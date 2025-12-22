@@ -32,20 +32,24 @@ export const useCommentStore = defineStore('comment', {
     },
     // 댓글 작성
     async submitComment(boardId, postId, content) {
-        if (!content.trim()) return
-  
-        this.creating = true
-        try {
-          await createComment(boardId, postId, content)
-  
-          // 가장 안전한 방식: 다시 조회
-          await this.loadComments(boardId, postId)
-        } catch (error) {
-          console.error('댓글 작성 실패', error)
-        } finally {
-          this.creating = false
-        }
-      },
+      if (!content.trim()) return
+
+      this.creating = true
+      try {
+        await createComment(boardId, postId, content)
+
+        // 새 총 개수를 기준으로 마지막 페이지 계산 후 이동
+        const nextTotal = this.totalElements + 1
+        const lastPage = Math.max(0, Math.ceil(nextTotal / this.size) - 1)
+
+        await this.loadComments(boardId, postId, lastPage)
+        return lastPage
+      } catch (error) {
+        console.error('댓글 작성 실패', error)
+      } finally {
+        this.creating = false
+      }
+    },
 
       // 댓글 수정
       async updateComment(boardId, postId, commentId, content) {

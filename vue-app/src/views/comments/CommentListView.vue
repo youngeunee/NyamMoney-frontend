@@ -54,12 +54,14 @@
           </div>
         </li>
       </ul>
+      <div ref="commentBottom" class="comment-scroll-bottom"></div>
     </template>
 
     <!-- 댓글 입력 폼 (댓글 0개여도 항상 노출) -->
     <div class="mt-6">
       <CommentCreateForm v-if="isAuthenticated"
-        :boardId="boardId" :postId="postId" />
+        :boardId="boardId" :postId="postId"
+        @submitted="handleCommentSubmitted" />
       <p v-else class="text-sm text-gray-400">
         로그인 후 댓글을 작성할 수 있습니다.
       </p>
@@ -109,6 +111,7 @@ export default {
     const commentStore = useCommentStore()
     const { comments, loading, page, totalPages, totalElements } = storeToRefs(commentStore)
     const commentTop = ref(null)
+    const commentBottom = ref(null)
     
     // 수정 중인 댓글
     const editingCommentId = ref(null)
@@ -133,6 +136,16 @@ export default {
       commentTop.value?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
+      })
+    }
+
+    const handleCommentSubmitted = async (targetPage) => {
+      const currentY = window.scrollY
+      await commentStore.loadComments(props.boardId, props.postId, targetPage ?? page.value)
+      await nextTick()
+      window.scrollTo({
+        top: currentY,
+        behavior: 'auto',
       })
     }
 
@@ -171,9 +184,9 @@ export default {
 
     return {
       comments, loading, page,
-      totalPages, totalElements, goPage, commentTop,
+      totalPages, totalElements, goPage, commentTop, commentBottom,
       editingCommentId, editingContent, startEdit, cancelEdit, saveEdit,
-      isMyComment, isAuthenticated, deleteComment,
+      isMyComment, isAuthenticated, deleteComment, handleCommentSubmitted,
     }
   },
 }
@@ -182,5 +195,9 @@ export default {
 <style lang="css">
   .comment-scroll-anchor {
     scroll-margin-top: 100px;
+  }
+
+  .comment-scroll-bottom {
+    height: 1px;
   }
 </style>
