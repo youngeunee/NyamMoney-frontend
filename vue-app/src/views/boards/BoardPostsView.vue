@@ -45,6 +45,7 @@
         <div class="flex items-start justify-between gap-3">
           <div class="space-y-1">
             <h2 class="font-semibold text-gray-900 line-clamp-1">{{ post.title || '제목 없음' }}</h2>
+            <p class="text-xs text-gray-500">작성자: {{ post.author?.nickname || '익명' }}</p>
             <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
               <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-100">
                 댓글 {{ post.commentCount }}

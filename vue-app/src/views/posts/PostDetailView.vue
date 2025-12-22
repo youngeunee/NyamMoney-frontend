@@ -19,9 +19,25 @@
           {{ post.title }}
         </h1>
 
-        <p class="text-sm text-gray-500 mb-6">
-          {{ post.author?.nickname }} · {{ post.createdAt }}
-        </p>
+        <div class="text-sm text-gray-500 mb-2 flex items-center gap-2">
+          <button
+            v-if="post.author?.nickname"
+            class="text-gray-700 font-medium hover:underline"
+            @click="toggleProfile(post.author.userId)"
+          >
+            {{ post.author.nickname }}
+          </button>
+          <span v-else>익명</span>
+          <span class="text-gray-400">· {{ post.createdAt }}</span>
+        </div>
+        <div v-if="profileTarget === post.author?.userId" class="mb-4">
+          <button
+            class="text-xs text-orange-600 hover:underline"
+            @click="goProfile(post.author.userId)"
+          >
+            프로필 보기 →
+          </button>
+        </div>
 
         <div class="mb-8 whitespace-pre-line">
           {{ post.content }}
@@ -55,7 +71,7 @@ import { storeToRefs } from 'pinia'
 import Layout from '@/components/Layout.vue'
 import CommentListView from '@/views/comments/CommentListView.vue'
 import { useAuthStore } from '../../stores/auth'
-import { watch } from 'vue'
+import { watch, ref } from 'vue'
 
 export default {
   components: {
@@ -79,6 +95,7 @@ export default {
     const postStore = usePostStore()
     const authStore = useAuthStore()
     const { post, loading } = storeToRefs(postStore)
+    const profileTarget = ref(null)
 
     // 게시글 상세 조회
     onMounted(() => {
@@ -132,10 +149,23 @@ export default {
       console.log('좋아요 클릭')
     }
 
+    const toggleProfile = (userId) => {
+      profileTarget.value = profileTarget.value === userId ? null : userId
+    }
+
+    const goProfile = (userId) => {
+      if (!userId) return
+      router.push({
+        name: 'UserProfile',
+        query: { userId },
+      })
+    }
+
     return {
       post,
       loading,
       goList, goEdit, authStore, handleDelete, toggleLike,
+      profileTarget, toggleProfile, goProfile,
     }
   },
 }
