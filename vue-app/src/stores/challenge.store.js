@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { fetchChallengeList, fetchChallengeDetail, challengeJoin, challengeCancel,
-    createChallenge, updateChallenge, deleteChallenge, } from '@/services/challenge.service'
+    createChallenge, updateChallenge, deleteChallenge, fetchChallengeParticipants, } from '@/services/challenge.service'
 
 export const useChallengeStore = defineStore('challenge', {
   state: () => ({
     challenges: [],
     challengeDetail: null,
+    participants: [],
     loading: false,
     joining: false,
     creating: false,
@@ -101,6 +102,15 @@ export const useChallengeStore = defineStore('challenge', {
         throw e
       } finally {
         this.deleting = false
+      }
+    },
+
+    async loadChallengeParticipants(challengeId) {
+      try {
+        const res = await fetchChallengeParticipants(challengeId)
+        this.participants = res.data?.participants || []
+      } catch (e) {
+        console.error('참여자 목록 조회 실패', e)
       }
     },
 
