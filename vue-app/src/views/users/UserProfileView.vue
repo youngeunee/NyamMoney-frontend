@@ -71,11 +71,9 @@
 
           <!-- -------------------- RIGHT (Posts) : 데스크톱에서 2행 span -------------------- -->
           <div class="space-y-6 order-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:row-span-2 lg:h-full lg:min-h-0">
-            <div class="flex items-start justify-between">
-              <div class="flex flex-col gap-2">
-                <div>
-                  <h2 class="text-2xl font-bold">Posts</h2>
-                </div>
+            <div class="flex flex-col gap-2">
+              <h2 class="text-2xl font-bold">Posts</h2>
+              <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex items-center gap-2">
                   <button
                     v-for="tab in mainTabs"
@@ -92,15 +90,13 @@
                     {{ tab.label }}
                   </button>
                 </div>
-              </div>
 
-              <span class="inline-flex items-center px-3 py-1 rounded-full bg-white border border-border text-sm shadow-sm">
-                총 {{ activeMainTab === 'commented' ? totalCommented : totalPosts }}개
-              </span>
+              </div>
             </div>
 
             <div class="space-y-4">
-              <div class="flex flex-wrap gap-2">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <div class="flex flex-wrap gap-2">
                 <button
                   v-for="tab in boardTabs"
                   :key="tab.key"
@@ -115,6 +111,10 @@
                 >
                   {{ tab.label }}
                 </button>
+              </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-white border border-border text-sm shadow-sm">
+                  총 {{ activeMainTab === 'commented' ? totalCommented : totalPosts }}개
+                </span>
               </div>
 
               <div class="border border-border bg-white rounded-lg shadow-sm h-full lg:min-h-0 flex flex-col">
