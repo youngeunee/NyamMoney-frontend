@@ -21,3 +21,6 @@ export function updateChallenge(challengeId, payload) {
   // 챌린지 삭제
 export function deleteChallenge(challengeId) {
   return api.delete(`/v1/challenges/${challengeId}`)}
+  // 참여자 조회
+  export const fetchChallengeParticipants = (challengeId) => {
+  return api.get(`/v1/challenges/${challengeId}/participants`)}

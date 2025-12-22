@@ -29,7 +29,7 @@
             ]"
             type="button"
           >
-            진행중만 보기
+            진행중인 챌린지 보기
           </button>
           <button
             @click="toggleUpcomingOnly"
@@ -41,7 +41,7 @@
             ]"
             type="button"
           >
-            진행 예정만 보기
+            진행 예정 챌린지 보기
           </button>
         </div>
       </div>

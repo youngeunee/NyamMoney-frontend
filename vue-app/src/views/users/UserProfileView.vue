@@ -87,7 +87,7 @@
                 <button
                   v-for="tab in tabs"
                   :key="tab.key"
-                  @click="activeTab = tab.key"
+                  @click="switchTab(tab.key)"
                   :class="[
                     'px-3 py-1 rounded-full text-sm border transition-colors',
                     activeTab === tab.key
@@ -112,7 +112,7 @@
                   class="max-h-[520px] lg:max-h-[640px] overflow-y-auto px-4 pb-4 space-y-3"
                 >
                   <UiCard
-                    v-for="post in filteredPosts"
+                    v-for="post in visibleItems"
                     :key="post.id"
                     wrapperClass="border border-border bg-white shadow-sm cursor-pointer"
                     @click="goPostDetail(post)"
@@ -269,7 +269,7 @@ import { computed, reactive, ref, watch, onMounted, onBeforeUnmount, nextTick } 
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
-import { fetchUser, fetchUserPosts } from '@/services/user.service'
+import { fetchUser, fetchUserPosts, fetchUserComments } from '@/services/user.service'
 import {
   requestFollow,
   unfollow,
@@ -497,6 +497,18 @@ const goPostDetail = (post) => {
   })
 }
 
+const switchTab = async (key) => {
+  activeTab.value = key
+  resetPosts()
+  resetCommented()
+  if (key === 'commented') {
+    await loadCommentedPosts({ append: false })
+  } else {
+    await loadPosts({ append: false })
+  }
+  await setupObserver()
+}
+
 // -------------------- Stats / boards / posts --------------------
 const stats = ref([
   { label: 'Posts', value: 0 },
@@ -505,22 +517,27 @@ const stats = ref([
 ])
 
 const posts = ref([])
+const commentedPosts = ref([])
 const boards = ref([])
 const loadingPosts = ref(false)
 
 const tabs = computed(() => [
-  { key: 'all', label: '전체' },
-  ...boards.value.map((b) => ({ key: String(b.boardId), label: b.name }))
+  { key: 'posts', label: '최근 게시글' },
+  { key: 'commented', label: '내 댓글 단 글' },
+  ...boards.value.map((b) => ({ key: String(b.boardId), label: b.name })),
 ])
 
-const activeTab = ref('all')
+const activeTab = ref('posts')
 
 const totalPosts = ref(0)
 
 const filteredPosts = computed(() => {
-  if (activeTab.value === 'all') return posts.value
+  if (activeTab.value === 'posts') return posts.value
+  if (activeTab.value === 'commented') return commentedPosts.value
   return posts.value.filter((post) => String(post.board) === String(activeTab.value))
 })
+
+const visibleItems = computed(() => filteredPosts.value)
 
 const loadedCount = computed(() => filteredPosts.value.length)
 
@@ -611,6 +628,16 @@ const resetPosts = () => {
   stats.value[0].value = 0
 }
 
+// 내 댓글 단 글 전용 커서
+const commentedCursor = ref(null)
+const commentedHasNext = ref(true)
+const commentedPageSize = ref(5)
+const resetCommented = () => {
+  commentedPosts.value = []
+  commentedCursor.value = null
+  commentedHasNext.value = true
+}
+
 // ✅ 서버는 userId + cursor + size만 받는 구조로 맞춤
 const loadPosts = async ({ append = false } = {}) => {
   if (loadingPosts.value) return
@@ -659,6 +686,45 @@ const loadPosts = async ({ append = false } = {}) => {
   }
 }
 
+const loadCommentedPosts = async ({ append = false } = {}) => {
+  if (loadingPosts.value) return
+  if (!targetUserId.value) return
+  if (append && !commentedHasNext.value) return
+
+  loadingPosts.value = true
+  try {
+    const res = await fetchUserComments({
+      userId: String(targetUserId.value),
+      cursor: append ? commentedCursor.value : null,
+      size: commentedPageSize.value
+    })
+    const data = res?.data ?? res
+
+    const mapped = (data?.items ?? []).map((c) => ({
+      id: c.postId,
+      board: String(c.boardId),
+      boardName: c.boardName ?? '',
+      title: c.postTitle ?? '(제목 없음)',
+      excerpt: c.content ?? '',
+      date: c.createdAt ?? '',
+      likes: c.likeCount ?? 0,
+      comments: c.commentCount ?? 0,
+    }))
+
+    if (append) commentedPosts.value.push(...mapped)
+    else commentedPosts.value = mapped
+
+    commentedCursor.value = data?.nextCursor ?? null
+    commentedHasNext.value = !!data?.hasNext
+  } catch (err) {
+    console.error('Failed to load commented posts', err)
+    if (!append) commentedPosts.value = []
+    commentedHasNext.value = false
+  } finally {
+    loadingPosts.value = false
+  }
+}
+
 const loadBoards = async () => {
   try {
     const res = await fetchBoards()
@@ -685,7 +751,11 @@ const setupObserver = async () => {
   io = new IntersectionObserver(
     (entries) => {
       if (entries?.[0]?.isIntersecting) {
-        loadPosts({ append: true })
+        if (activeTab.value === 'commented') {
+          loadCommentedPosts({ append: true })
+        } else {
+          loadPosts({ append: true })
+        }
       }
     },
     {
@@ -710,7 +780,12 @@ onBeforeUnmount(() => {
 // 탭 바뀌면: 목록 초기화 + 첫 페이지 + observer 재설정(스크롤 루트가 유지돼도 안전)
 watch(activeTab, async () => {
   resetPosts()
-  await loadPosts({ append: false })
+  resetCommented()
+  if (activeTab.value === 'commented') {
+    await loadCommentedPosts({ append: false })
+  } else {
+    await loadPosts({ append: false })
+  }
   await setupObserver()
 })
 
