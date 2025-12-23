@@ -16,8 +16,6 @@ import FollowList from '../views/follow/followList.vue'
 import Help from '../views/Help.vue'
 import { useAuthStore } from '../stores/auth'
 import Login from '../views/users/Login.vue'
-import BoardPostsView from '../views/boards/BoardPostsView.vue'
-import PostCreateView from '../views/boards/PostCreateView.vue'
 import UserProfileView from '../views/users/UserProfileView.vue'
 import ChallengeListView from '../views/challenges/ChallengeListView.vue'
 import TransactionCreateView from '../views/TransactionCreateView.vue'
@@ -25,17 +23,11 @@ import TransactionDetailView from '../views/TransactionDetailView.vue'
 import TransactionEditView from '../views/TransactionEditView.vue'
 
 const routes = [
-  // 루트 → 로그인으로 리다이렉트
   { path: '/', redirect: '/login' },
-  // { path: '/', name: 'RootLogin', component: Login },
-
-
-  // 인증 불필요
   { path: '/login', name: 'Login', component: Login },
   { path: '/signup', name: 'Signup', component: Signup },
   { path: '/help', name: 'Help', component: Help },
 
-  // 인증 필요한 라우트들
   { path: '/dashboard', name: 'Dashboard', component: Home, meta: { requiresAuth: true } },
   { path: '/me', name: 'Me', component: Me, meta: { requiresAuth: true } },
   { path: '/analytics', name: 'Analytics', component: Analytics, meta: { requiresAuth: true } },
@@ -51,61 +43,62 @@ const routes = [
   { path: '/chat', name: 'Chat', component: Chat, meta: { requiresAuth: true } },
   { path: '/profile', name: 'UserProfile', component: UserProfileView, meta: { requiresAuth: true } },
   { path: '/follows', name: 'FollowList', component: FollowList, meta: { requiresAuth: true } },
-  // { path: '/organization', name: 'Organization', component: Organization, meta: { requiresAuth: true } },
-  { path: '/boards/:boardId/posts/:postId/edit', name: 'postEdit', component: ()=>import('@/views/posts/PostEditView.vue'),
-    props: route => ({
-    boardId: Number(route.params.boardId),
-    postId: Number(route.params.postId),
+  {
+    path: '/boards/:boardId/posts/:postId/edit',
+    name: 'postEdit',
+    component: () => import('@/views/posts/PostEditView.vue'),
+    props: (route) => ({
+      boardId: Number(route.params.boardId),
+      postId: Number(route.params.postId),
     }),
   },
-  { path: '/challenges/:challengeId', name: 'challengeDetail', component: ()=>import('@/views/challenges/ChallengeDetailView.vue'),
-    props: route=>({
+  {
+    path: '/challenges/:challengeId',
+    name: 'challengeDetail',
+    component: () => import('@/views/challenges/ChallengeDetailView.vue'),
+    props: (route) => ({
       challengeId: Number(route.params.challengeId),
     }),
   },
-  { path: '/challenges/new', name: 'challengeCreate',
-    component: ()=>import('@/views/challenges/ChallengeCreateView.vue'),
+  {
+    path: '/challenges/new',
+    name: 'challengeCreate',
+    component: () => import('@/views/challenges/ChallengeCreateView.vue'),
   },
   {
-  path: '/organization',
-  name:'Organization',
-  redirect: { name: 'boardPosts', params: { boardId: 1 } },
-  component: Organization,
-  meta: { requiresAuth: true },
-  children: [
-    {
-      path: 'boards/:boardId',
-      name: 'boardPosts',
-      component: () => import('@/views/boards/BoardPostsView.vue'),
-      props: route => ({
-        boardId: Number(route.params.boardId),
-        titleMap: {
-          1: '자유게시판',
-          2: '질문 게시판',
-          3: '팁 게시판',
-          4: '공지 게시판',
-        }[route.params.boardId],
-      }),
-    },
-    {
-      path: 'boards/:boardId/posts/new',
-      name: 'newPost',
-      component: () => import('@/views/boards/PostCreateView.vue'),
-      props: true,
-    },
-    {
-      path: 'boards/:boardId/posts/:postId',
-      name: 'postDetail',
-      component: () => import('@/views/posts/PostDetailView.vue'),
-      props: true,
-    },
-  ],
-},
-{ path: '/challenges/:challengeId/edit', name: 'challengeEdit',
-  component: ()=>import('@/views/challenges/ChallengeEditView.vue')
-},
-
-
+    path: '/organization',
+    name: 'Organization',
+    redirect: { name: 'boardPosts', params: { boardId: 1 } },
+    component: Organization,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'boards/:boardId',
+        name: 'boardPosts',
+        component: () => import('@/views/boards/BoardPostsView.vue'),
+        props: (route) => ({
+          boardId: Number(route.params.boardId),
+        }),
+      },
+      {
+        path: 'boards/:boardId/posts/new',
+        name: 'newPost',
+        component: () => import('@/views/boards/PostCreateView.vue'),
+        props: true,
+      },
+      {
+        path: 'boards/:boardId/posts/:postId',
+        name: 'postDetail',
+        component: () => import('@/views/posts/PostDetailView.vue'),
+        props: true,
+      },
+    ],
+  },
+  {
+    path: '/challenges/:challengeId/edit',
+    name: 'challengeEdit',
+    component: () => import('@/views/challenges/ChallengeEditView.vue'),
+  },
 ]
 
 const router = createRouter({
@@ -113,17 +106,22 @@ const router = createRouter({
   routes,
 })
 
-// restore()를 한 번만 호출하기 위한 플래그
-
 let restored = false
 
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
 
-  // 앱 최초 라우팅 시에만 쿠키에서 토큰 복원
   if (!restored) {
-    auth.setAuthFromToken()   // ← 여기!
     restored = true
+    Promise.resolve(auth.restoreFromRefresh?.() ?? auth.setAuthFromToken())
+      .finally(() => {
+        if (to.meta.requiresAuth && !auth.isAuthenticated) {
+          next({ path: '/login' })
+        } else {
+          next()
+        }
+      })
+    return
   }
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
