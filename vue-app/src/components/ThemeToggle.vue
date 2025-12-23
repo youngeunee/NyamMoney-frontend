@@ -1,5 +1,10 @@
 <template>
-  <button @click="toggleTheme" class="px-2 py-1 border border-border rounded">{{ currentThemeLabel }}</button>
+  <button
+    @click="toggleTheme"
+    class="inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition"
+  >
+    {{ currentThemeLabel }}
+  </button>
 </template>
 
 <script lang="ts">

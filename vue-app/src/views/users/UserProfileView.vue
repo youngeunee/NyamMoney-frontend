@@ -1,7 +1,8 @@
 ﻿<template>
   <Layout>
-    <div>
-      <div class="max-w-6xl mx-auto p-8 space-y-8">
+    <div class="p-6 space-y-6">
+      <PageHeader title="프로필" description="사용자 프로필을 확인하세요." />
+      <div class="max-w-6xl mx-auto space-y-8">
 
         <!-- ✅ 데스크톱: 2열 + 2행 / 모바일: 자동 세로 -->
         <div class="grid gap-8 lg:grid-cols-[320px_1fr] lg:grid-rows-[auto_1fr] lg:items-stretch">
@@ -216,60 +217,82 @@
             </div>
           </div>
 
-          <!-- -------------------- LEFT / BOTTOM (소비내역 분석) -------------------- -->
+          
+          
+          <!-- -------------------- LEFT / BOTTOM (예산 사용률) -------------------- -->
           <UiCard
+            v-if="showBudgetUsage"
             wrapperClass="order-2 border border-border bg-white shadow-sm"
             class="lg:col-start-1 lg:row-start-2"
           >
-            <!-- ✅ 왼쪽 컬럼에선 세로 배치가 자연스러움 -->
-            <div class="grid gap-8 grid-cols-1">
+            <template #header>
+              <div class="px-4 pt-4 flex items-center justify-between">
+                <div>
+                  <p class="text-xs text-muted-foreground">이번 달 예산 사용률</p>
+                  <p class="text-sm font-semibold text-foreground">소비 & 냠 비용</p>
+                </div>
+                <div v-if="summaryLoading" class="text-xs text-muted-foreground flex items-center gap-2">
+                  <UiSpinner /> 불러오는 중
+                </div>
+              </div>
+            </template>
 
+            <div v-if="!summaryLoading" class="p-4 space-y-6">
               <div class="space-y-3">
-                <p class="text-sm font-semibold text-gray-700">소비내역 분석</p>
-                <div class="flex items-center gap-4">
-                  <div class="relative w-36 h-36 shrink-0">
-                    <div class="w-full h-full rounded-full" :style="{ background: boardGradient }"></div>
-                    <div class="absolute inset-4 rounded-full bg-white shadow-inner flex items-center justify-center text-center text-sm font-semibold">
-                      <div>
-                        <p class="text-xs text-gray-500">총 게시글</p>
-                        <p class="text-lg">{{ totalPosts }}</p>
-                      </div>
-                    </div>
+                <p class="text-sm font-semibold text-foreground text-center">냠 비용 비율</p>
+                <div class="flex items-center justify-center gap-4">
+                  <div class="relative inline-block donut-wrapper">
+                    <svg viewBox="0 0 36 36" class="h-44 w-44">
+                      <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
+                      <circle
+                        cx="18" cy="18" r="15"
+                        fill="none"
+                        stroke="#fed253"
+                        stroke-width="6"
+                        stroke-linecap="butt"
+                        :stroke-dasharray="`${impulseUsageCap} ${100 - impulseUsageCap}`"
+                        stroke-dashoffset="25"
+                      />
+                      <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
+                      <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="6" font-weight="700" dominant-baseline="middle">
+                        {{ Math.round(impulseUsage) }}%
+                      </text>
+                    </svg>
                   </div>
-                  <ul class="space-y-2 text-sm text-gray-600">
-                    <li v-for="seg in boardSegments" :key="seg.label" class="flex items-center gap-2">
-                      <span class="inline-block w-3 h-3 rounded-full" :style="{ background: seg.color }"></span>
-                      <span class="w-14">{{ seg.label }}</span>
-                      <span class="text-gray-500">{{ seg.percent }}%</span>
-                    </li>
-                  </ul>
                 </div>
               </div>
 
               <div class="space-y-3">
-                <p class="text-sm font-semibold text-gray-700">예산?</p>
-                <div class="flex items-center gap-4">
-                  <div class="relative w-36 h-36 shrink-0">
-                    <div class="w-full h-full rounded-full" :style="{ background: engagementGradient }"></div>
-                    <div class="absolute inset-4 rounded-full bg-white shadow-inner flex items-center justify-center text-center text-sm font-semibold">
-                      <div>
-                        <p class="text-xs text-gray-500">총 반응</p>
-                        <p class="text-lg">{{ totalEngagement }}</p>
-                      </div>
-                    </div>
+                <p class="text-sm font-semibold text-foreground text-center">예산 사용률</p>
+                <div class="flex items-center justify-center gap-4">
+                  <div class="relative inline-block donut-wrapper">
+                    <svg viewBox="0 0 36 36" class="h-44 w-44">
+                      <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
+                      <circle
+                        cx="18" cy="18" r="15"
+                        fill="none"
+                        stroke="#fed253"
+                        stroke-width="6"
+                        stroke-linecap="butt"
+                        :stroke-dasharray="`${expenseUsageCap} ${100 - expenseUsageCap}`"
+                        stroke-dashoffset="25"
+                      />
+                      <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
+                      <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="6" font-weight="700" dominant-baseline="middle">
+                        {{ Math.round(expenseUsage) }}%
+                      </text>
+                    </svg>
                   </div>
-                  <ul class="space-y-2 text-sm text-gray-600">
-                    <li v-for="seg in engagementSegments" :key="seg.label" class="flex items-center gap-2">
-                      <span class="inline-block w-3 h-3 rounded-full" :style="{ background: seg.color }"></span>
-                      <span class="w-14">{{ seg.label }}</span>
-                      <span class="text-gray-500">{{ seg.percent }}%</span>
-                    </li>
-                  </ul>
                 </div>
               </div>
+            </div>
 
+            <div v-else class="p-4 text-sm text-muted-foreground text-center">
+              데이터를 불러오는 중입니다.
             </div>
           </UiCard>
+
+
 
         </div>
       </div>
@@ -282,8 +305,15 @@
 import { computed, reactive, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import Layout from '@/components/Layout.vue'
+import PageHeader from '@/components/PageHeader.vue'
+import UiAvatar from '@/components/ui/Avatar.vue'
+import UiButton from '@/components/ui/Button.vue'
+import UiCard from '@/components/ui/Card.vue'
+import UiSpinner from '@/components/ui/Spinner.vue'
+import { useAuthStore } from '@/stores/auth'
 
-import { fetchUser, fetchUserPosts, fetchUserComments } from '@/services/user.service'
+import { fetchUser, fetchUserPosts, fetchUserComments, fetchMe } from '@/services/user.service'
 import {
   requestFollow,
   unfollow,
@@ -295,6 +325,8 @@ import {
   fetchFollowings,
 } from '@/services/follow.service'
 import { fetchBoards } from '@/services/board.service'
+import { fetchTransactionSummary, fetchUserTransactionSummary } from '@/services/transaction.service'
+import { fetchTransactionDailySummary } from '@/services/transaction.service'
 
 // 참여 중인 챌린지 출력 ------------------------------------------ 챌린지
 import { useChallengeStore } from '@/stores/challenge.store'
@@ -329,14 +361,8 @@ const goChallengeDetail = (challengeId) => {
 }
 // --------------- 여기까지 챌린지 --------------------
 
-import { useAuthStore } from '@/stores/auth'
-import Layout from '../../components/Layout.vue'
-import UiAvatar from '../../components/ui/Avatar.vue'
-import UiButton from '../../components/ui/Button.vue'
-import UiCard from '../../components/ui/Card.vue'
-
 const toStr = (v) => (v === null || v === undefined ? '' : String(v))
-
+const formatCurrency = (value) => (value ?? 0).toLocaleString('ko-KR')
 // -------------------- state --------------------
 const profile = reactive({
   nickname: '',
@@ -356,9 +382,10 @@ const route = useRoute()
 const router = useRouter()
 
 const targetUserId = computed(() => {
-  const fromRoute = route.query.userId
+  const fromParams = route.params.userId
+  const fromQuery = route.query.userId
   const own = myUserId.value ? String(myUserId.value) : ''
-  return (fromRoute ? String(fromRoute) : '') || own || profile.userId
+  return (fromParams ? String(fromParams) : '') || (fromQuery ? String(fromQuery) : '') || own || profile.userId
 })
 
 const isMyProfile = computed(() => {
@@ -377,6 +404,31 @@ const followButtonVariant = computed(() => {
   if (profile.followStatus === 'PENDING' || profile.followStatus === 'ACCEPTED') return 'outline'
   return 'default'
 })
+
+const showBudgetUsage = computed(() => {
+  if (isMyProfile.value) return false
+  const targetVisible = profile.profileVisibility || profile.shareLevel
+  const visible = String(targetVisible || '').toUpperCase()
+  const isPublic = visible === 'PUBLIC'
+  const status = String(profile.followStatus || '').toUpperCase()
+  const isFollowed = status === 'ACCEPTED'
+  return isPublic || isFollowed
+})
+
+const expenseUsage = computed(() => {
+  const budget = monthlyBudget.value || 0
+  if (!budget) return 0
+  return Math.max((monthlyExpenseAmount.value / budget) * 100, 0)
+})
+
+const impulseUsage = computed(() => {
+  const budget = triggerBudget.value || 0
+  if (!budget) return 0
+  return Math.max((monthlyImpulseAmount.value / budget) * 100, 0)
+})
+
+const expenseUsageCap = computed(() => Math.min(Math.round(expenseUsage.value), 100))
+const impulseUsageCap = computed(() => Math.min(Math.round(impulseUsage.value), 100))
 
 const loadingFollow = ref(false)
 const loadingBlock = ref(false)
@@ -501,6 +553,46 @@ const toggleBlock = async () => {
   }
 }
 
+const loadBudgetSummary = async () => {
+  summaryLoading.value = true
+  try {
+    if (!showBudgetUsage.value) {
+      budgetAccessDenied.value = true
+      monthlyExpenseAmount.value = 0
+      monthlyImpulseAmount.value = 0
+      monthlyBudget.value = 0
+      triggerBudget.value = 0
+      return
+    }
+
+    const now = new Date()
+    const summaryPromise = fetchUserTransactionSummary(targetUserId.value,{
+      from: formatLocalDateTime(startOfMonth()),
+      to: formatLocalDateTime(now),
+    })
+
+    if (isMyProfile.value) {
+      const meRes = await fetchMe()
+      monthlyBudget.value = meRes?.data?.monthlyBudget ?? 0
+      triggerBudget.value = meRes?.data?.triggerBudget ?? 0
+    }
+
+    const sumRes = await summaryPromise
+    monthlyExpenseAmount.value = sumRes?.data?.totalExpense ?? 0
+    monthlyImpulseAmount.value = sumRes?.data?.totalImpulseExpense ?? 0
+    budgetAccessDenied.value = false
+  } catch (err) {
+    console.error('loadBudgetSummary failed', err)
+    if (err?.response?.status === 403) {
+      budgetAccessDenied.value = true
+    }
+    monthlyExpenseAmount.value = 0
+    monthlyImpulseAmount.value = 0
+  } finally {
+    summaryLoading.value = false
+  }
+}
+
 const goEdit = () => router.push('/me')
 
 const goPostDetail = (post) => {
@@ -576,8 +668,24 @@ const visibleItems = computed(() => filteredPosts.value)
 
 const loadedCount = computed(() => filteredPosts.value.length)
 
-// -------------------- donut(기존 유지) --------------------
-const donutColors = ['#f97316', '#3b82f6', '#10b981', '#a855f7', '#f59e0b']
+// -------------------- donut 색상 (대시보드와 동일) --------------------
+const PRIMARY_PIE_COLOR = '#fed253'
+const NEUTRAL_PIE_COLORS = [
+  'rgba(0,0,0,0.8)',
+  'rgba(0,0,0,0.65)',
+  'rgba(0,0,0,0.5)',
+  'rgba(0,0,0,0.35)',
+  'rgba(0,0,0,0.25)',
+]
+const donutColors = [PRIMARY_PIE_COLOR, ...NEUTRAL_PIE_COLORS]
+
+// 예산 요약
+const summaryLoading = ref(false)
+const monthlyExpenseAmount = ref(0)
+const monthlyImpulseAmount = ref(0)
+const monthlyBudget = ref(0)
+const triggerBudget = ref(0)
+const budgetAccessDenied = ref(false)
 
 const boardActivity = computed(() => {
   const total = totalPosts.value || 1
@@ -608,47 +716,20 @@ const boardSegments = computed(() => {
   })
 })
 
-const boardGradient = computed(() => {
-  if (!boardSegments.value.length) return 'conic-gradient(#e5e7eb 0deg 360deg)'
-  const stops = boardSegments.value
-    .map((seg) => `${seg.color} ${seg.start}deg ${seg.end}deg`)
-    .join(', ')
-  return `conic-gradient(${stops})`
-})
+const startOfMonth = () => {
+  const d = new Date()
+  d.setDate(1)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
 
+const formatLocalDateTime = (date) => {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours(),
+  )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
 
-const totalEngagement = computed(() => {
-  return posts.value.reduce(
-    (acc, post) => acc + (Number(post.likes) || 0) + (Number(post.comments) || 0),
-    0
-  )
-})
-
-
-const engagementSegments = computed(() => {
-  const total = totalEngagement.value || 1
-  let acc = 0
-  const base = [
-    { label: '좋아요', value: posts.value.reduce((sum, p) => sum + (p.likes || 0), 0) },
-    { label: '댓글', value: posts.value.reduce((sum, p) => sum + (p.comments || 0), 0) }
-  ]
-  return base.map((item, idx) => {
-    const percent = Math.round((item.value / total) * 100)
-    const deg = percent * 3.6
-    const start = acc
-    const end = acc + deg
-    acc = end
-    return { ...item, percent, start, end, color: donutColors[idx % donutColors.length] }
-  })
-})
-
-const engagementGradient = computed(() => {
-  if (!engagementSegments.value.length) return 'conic-gradient(#e5e7eb 0deg 360deg)'
-  const stops = engagementSegments.value
-    .map((seg) => `${seg.color} ${seg.start}deg ${seg.end}deg`)
-    .join(', ')
-  return `conic-gradient(${stops})`
-})
 
 
 // -------------------- cursor infinite scroll 상태 --------------------
@@ -829,6 +910,7 @@ watch(
     await loadRelationship()
     await loadBoards()
     await loadFollowCounts()
+    await loadBudgetSummary()
 
     // ✅ 여기 추가
     await challengeStore.loadChallenges()

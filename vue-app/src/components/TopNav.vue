@@ -3,33 +3,12 @@
     class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60"
   >
     <div
-      class="container flex h-16 items-center justify-end lg:justify-between px-4 lg:px-6 max-w-6xl mx-auto pl-16 lg:pl-6"
+      class="container flex h-16 items-center justify-end lg:justify-end px-4 lg:px-6 max-w-6xl mx-auto pl-16 lg:pl-6"
     >
-      <!-- 브레드크럼 -->
-      <div class="hidden lg:block">
-        <nav class="flex items-center space-x-2">
-          <RouterLink
-            to="/"
-            class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-          >
-            Home
-          </RouterLink>
-          <template v-for="(segment, index) in pathSegments" :key="segment">
-            <span class="text-muted-foreground/50">•</span>
-            <RouterLink
-              :to="'/' + pathSegments.slice(0, index + 1).join('/')"
-              class="text-sm font-medium text-foreground hover:text-primary transition-colors"
-            >
-              {{ capitalize(segment) }}
-            </RouterLink>
-          </template>
-        </nav>
-      </div>
-
       <!-- 오른쪽 아이콘 영역 -->
       <div class="flex items-center gap-3">
         <Notifications />
-        <button class="p-2 rounded-md hover:bg-accent" aria-label="Toggle theme">🌓</button>
+        <ThemeToggle class="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition" />
 
         <!-- 아바타 + 드롭다운 -->
         <div class="relative">
@@ -37,7 +16,7 @@
             class="relative h-9 w-9 rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             @click="isMenuOpen = !isMenuOpen"
           >
-            <div class="h-9 w-9 rounded-full border-2 border-primary/20 overflow-hidden">
+            <div class="h-9 w-9 rounded-full border border-border overflow-hidden bg-muted">
               <img
                 v-if="avatar"
                 :src="avatar"
@@ -66,13 +45,13 @@
             <div class="border-t border-border mt-2 pt-2 space-y-1">
               <RouterLink
                 :to="{ name: 'UserProfile', query: { userId: userId } }"
-                class="block px-2 py-1 hover:bg-accent rounded"
+                class="block px-2 py-1 hover:bg-muted rounded"
                 @click="closeMenu"
               >
                 My Page
               </RouterLink>
               <button
-                class="w-full text-left px-2 py-1 hover:bg-accent rounded"
+                class="w-full text-left px-2 py-1 hover:bg-muted rounded"
                 @click="handleLogout"
               >
                 Log out
@@ -89,10 +68,11 @@ import { defineComponent, computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import Notifications from './Notifications.vue'
+import ThemeToggle from './ThemeToggle.vue'
 
 export default defineComponent({
   name: 'TopNav',
-  components: { RouterLink, Notifications },
+  components: { RouterLink, Notifications, ThemeToggle },
   setup() {
     const route = useRoute()
     const router = useRouter()
@@ -100,11 +80,13 @@ export default defineComponent({
 
     const auth = useAuthStore()
 
-    const displayName = computed(() => `${auth.nickname} (${auth.loginId})`)
+    const displayName = computed(() => `${auth.nickname || '사용자'} (${auth.loginId || ''})`)
     const userId = computed(() => auth.userId)
 
     // ✅ 이니셜은 닉네임 앞 2글자
-    const initials = computed(() => auth.nickname.slice(0, 2).toUpperCase())
+    const initials = computed(() => (auth.nickname || auth.loginId || '?').slice(0, 2).toUpperCase())
+    const avatar = computed(() => null)
+    const email = computed(() => auth.loginId || '')
 
     function capitalize(s) {
       return s.charAt(0).toUpperCase() + s.slice(1)
@@ -146,6 +128,8 @@ export default defineComponent({
       displayName,
       initials,
       userId,
+      avatar,
+      email,
     }
   },
 })

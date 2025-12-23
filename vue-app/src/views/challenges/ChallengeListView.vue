@@ -1,117 +1,89 @@
 <template>
   <Layout>
-    <div>
-      <h1 class="text-2xl font-bold mb-6">챌린지 리스트</h1>
+    <div class="p-6 space-y-6">
+      <PageHeader title="챌린지" description="진행 중/예정 챌린지를 확인하세요." />
 
-      <!-- 헤더 영역 -->
-      <div class="flex justify-between items-center mb-6 gap-3">
+      <div class="flex flex-wrap items-center gap-3">
         <button
           @click="goCreate"
-          class="inline-flex items-center
-                 px-3 py-1.5
-                 text-sm font-medium
-                 rounded-full
-                 border border-red-500
-                 bg-yummoney-primary text-black
-                 hover:bg-yummoney-primaryHover
-                 transition">
-          + 챌린지 생성
+          class="inline-flex items-center px-3 py-2 text-sm font-semibold rounded-md bg-primary text-primary-foreground shadow-sm hover:opacity-90 transition"
+          type="button"
+        >
+        챌린지 생성
         </button>
 
         <div class="ml-auto flex gap-2">
           <button
             @click="toggleActiveOnly"
             :class="[
-              'px-3 py-1.5 text-sm rounded-full border transition-colors',
+              'px-3 py-1.5 text-sm rounded-md border border-border transition-colors hover:bg-accent',
               showActiveOnly
-                ? 'bg-orange-500 text-white border-orange-500'
-                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                ? 'bg-primary text-primary-foreground border-primary hover:bg-primary'
+                : 'bg-card text-foreground'
             ]"
             type="button"
           >
-            진행중인 챌린지 보기
+            진행
           </button>
           <button
             @click="toggleUpcomingOnly"
             :class="[
-              'px-3 py-1.5 text-sm rounded-full border transition-colors',
+              'px-3 py-1.5 text-sm rounded-md border border-border transition-colors hover:bg-accent',
               showUpcomingOnly
-                ? 'bg-orange-500 text-white border-orange-500'
-                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                ? 'bg-primary text-primary-foreground border-primary hover:bg-primary'
+                : 'bg-card text-foreground'
             ]"
             type="button"
           >
-            진행 예정 챌린지 보기
+            대기
           </button>
         </div>
       </div>
-  
-      <!-- 로딩 -->
-      <p v-if="loading">불러오는 중...</p>
-  
-      <!-- 컨텐츠 -->
-     <div v-if="!loading"
-     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-  <div
-    v-for="c in visibleChallenges"
-    :key="c.challengeId"
-    class="rounded-xl border bg-white p-5 shadow-sm
-           hover:-translate-y-1 transition cursor-pointer"
-    :class="statusStyleMap[c.status]?.border"
-    @click="goDetail(c.challengeId)"
-  >
+      <div v-if="loading" class="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
+        불러오는 중...
+      </div>
 
-    <!-- 🔹 상단 뱃지 영역 -->
-    <div class="flex items-center gap-2 mb-2">
-      <!-- 상태 뱃지 -->
-      <span
-        class="px-2 py-1 text-xs font-medium rounded-full"
-        :class="statusStyleMap[c.status]?.badge"
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        {{ statusStyleMap[c.status]?.label }}
-      </span>
+        <div
+          v-for="c in visibleChallenges"
+          :key="c.challengeId"
+          class="rounded-lg border border-border bg-card p-5 shadow-sm transition-colors hover:bg-accent/60 cursor-pointer"
+          @click="goDetail(c.challengeId)"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <span
+              class="px-2 py-1 text-xs font-semibold rounded-full bg-muted text-foreground"
+            >
+              {{ statusStyleMap[c.status]?.label || '진행 상태' }}
+            </span>
+            <span
+              v-if="c.joined"
+              class="px-2 py-1 text-xs font-medium rounded-full bg-primary text-primary-foreground"
+            >
+              참여 중
+            </span>
+          </div>
 
-      <!-- 참여 여부 뱃지 (참여한 경우만) -->
-      <span
-        v-if="c.joined"
-        class="px-2 py-1 text-xs font-medium rounded-full
-               bg-green-100 text-green-700"
-      >
-        참여 중
-      </span>
+          <h2 class="font-semibold text-lg mb-2 text-foreground line-clamp-2">
+            {{ c.title }}
+          </h2>
+          <p class="text-sm text-muted-foreground mb-4 line-clamp-2">
+            {{ c.description }}
+          </p>
+
+          <div class="space-y-1 text-sm text-muted-foreground">
+            <p>기간 {{ c.startDate }} ~ {{ c.endDate }}</p>
+            <p>참여자 {{ c.participantCount ?? 0 }}명</p>
+          </div>
+        </div>
+      </div>
+
+      <div ref="sentinel" class="h-10"></div>
     </div>
-
-    <!-- 제목 -->
-    <h2 class="font-semibold text-lg mb-2">
-      {{ c.title }}
-    </h2>
-
-    <!-- 설명 -->
-    <p class="text-sm text-gray-600 mb-4 line-clamp-2">
-      {{ c.description }}
-    </p>
-
-    <!-- 기간 -->
-    <p class="text-xs text-gray-500 mb-2">
-      {{ c.startDate }} ~ {{ c.endDate }}
-    </p>
-
-    <!-- 하단 -->
-    <div class="flex justify-between items-center mt-4">
-      <span class="text-sm text-gray-500">
-        참여자 {{ c.participantCount ?? 0 }}명
-      </span>
-    </div>
-
-  </div>
-</div>
-
-<div ref="sentinel" class="h-10"></div>
-
-</div>
-
-        
   </Layout>
 </template>
 
@@ -120,8 +92,11 @@ import { onMounted, onBeforeUnmount, computed, ref, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useChallengeStore } from '@/stores/challenge.store'
 import { useRouter } from 'vue-router'
+import Layout from '@/components/Layout.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 export default {
+  components: { Layout, PageHeader },
   setup() {
     const router = useRouter()
     const challengeStore = useChallengeStore()
@@ -134,26 +109,10 @@ export default {
     let observer = null
 
     const statusStyleMap = {
-      UPCOMING: {
-        badge: 'bg-blue-100 text-blue-700',
-        border: 'hover:border-blue-400',
-        label: '곧 시작',
-      },
-      ACTIVE: {
-        badge: 'bg-green-100 text-green-700',
-        border: 'hover:border-green-500',
-        label: '진행 중',
-      },
-      ENDED: {
-        badge: 'bg-gray-100 text-gray-500',
-        border: 'hover:border-gray-300',
-        label: '종료됨',
-      },
-      CLOSED: {
-        badge: 'bg-gray-100 text-gray-500',
-        border: 'border-gray-200',
-        label: '취소됨',
-      },
+      UPCOMING: { label: '대기' },
+      ACTIVE: { label: '진행' },
+      ENDED: { label: '종료' },
+      CLOSED: { label: '종료' },
     }
 
     const filteredChallenges = computed(() => {

@@ -172,8 +172,8 @@ export default {
     const goProfile = (userId) => {
       if (!userId) return
       router.push({
-        name: 'UserProfile',
-        query: { userId },
+        name: 'UserProfileParam',
+        params: { userId },
       })
     }
 

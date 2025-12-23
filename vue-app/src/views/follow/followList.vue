@@ -1,76 +1,77 @@
 ﻿<template>
   <Layout>
-    <div class="container mx-auto py-10">
-      <h1 class="text-3xl font-bold mb-6">Follows</h1>
+    <div class="p-6 space-y-6">
+      <PageHeader title="팔로우" description="팔로우 요청과 목록을 확인하세요." />
 
       <!-- Tabs -->
-      <div class="flex gap-2 mb-6">
-        <button
-          v-for="t in tabs"
-          :key="t.value"
-          @click="tab = t.value"
-          :class="[
-            'px-3 py-1 rounded',
-            tab === t.value ? 'bg-primary text-primary-foreground' : 'border border-border bg-white'
-          ]"
-          type="button"
-        >
-          {{ t.label }}
-        </button>
+      <div class="flex flex-wrap items-center gap-3 mb-6 text-sm">
+        <template v-for="(t, idx) in tabs" :key="t.value">
+          <span v-if="idx > 0" class="text-muted-foreground">|</span>
+          <button
+            @click="tab = t.value"
+            :class="[
+              'px-2 py-1 rounded transition-colors',
+              tab === t.value ? 'text-primary font-semibold' : 'text-foreground hover:text-primary'
+            ]"
+            type="button"
+          >
+            {{ t.label }}
+          </button>
+        </template>
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="text-sm text-gray-500 bg-white rounded p-4 border border-border">
-        Loading...
+      <div v-if="loading" class="text-sm text-muted-foreground bg-card rounded border border-border p-4">
+        로딩 중입니다...
       </div>
 
       <!-- =======================
            Follow Requests (INCOMING)
       ======================== -->
-      <div v-else-if="tab === 'requests'" class="border border-border rounded bg-card p-4">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold">팔로우 요청</h2>
-          <span class="text-sm text-gray-500">Pending {{ incomingRequests.length }}</span>
+      <div v-else-if="tab === 'requests'" class="border border-border rounded-md bg-card">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h2 class="text-lg font-semibold text-foreground">팔로우 요청</h2>
+          <span class="text-sm text-muted-foreground">{{ incomingRequests.length }}명</span>
         </div>
 
-        <p v-if="!incomingRequests.length" class="text-sm text-gray-500">
+        <p v-if="!incomingRequests.length" class="px-4 py-10 text-center text-sm text-muted-foreground">
           나에게 들어온 팔로우 요청이 없습니다.
         </p>
 
-        <ul v-else class="space-y-3">
+        <ul v-else class="divide-y divide-border">
           <li
             v-for="req in incomingRequests"
             :key="req.requestId"
-            class="p-4 rounded bg-white border border-border flex items-center justify-between gap-4"
+            class="px-4 py-3 flex items-center justify-between gap-4 hover:bg-accent/60 transition"
           >
             <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-full bg-orange-100 text-orange-700 font-semibold flex items-center justify-center overflow-hidden">
+              <div class="h-10 w-10 rounded-full bg-primary/20 text-foreground font-semibold flex items-center justify-center overflow-hidden">
                 <span>{{ (req.nickname || 'U').charAt(0) }}</span>
               </div>
 
               <div>
-                <p class="font-semibold">{{ req.nickname }}</p>
-                <p class="text-xs text-gray-400">요청일 {{ req.createdAt }}</p>
+                <p class="text-base font-semibold text-foreground">{{ req.nickname }}</p>
+                <p class="text-xs text-muted-foreground">요청일:  {{ formatDate(req.createdAt) }}</p>
               </div>
             </div>
 
             <div class="flex items-center gap-2">
               <button
-                class="px-3 py-1 rounded bg-orange-100 text-gray-700 text-sm"
+                class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 type="button"
                 @click="declineIncoming(req.requestId)"
               >
                 거절
               </button>
               <button
-                class="px-3 py-1 rounded bg-orange-500 text-white text-sm hover:bg-orange-600"
+                class="px-3 py-1 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
                 type="button"
                 @click="acceptIncoming(req.requestId)"
               >
                 수락
               </button>
               <button
-                class="px-3 py-1 rounded border border-border text-sm"
+                class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 type="button"
                 @click="goProfile(req.userId)"
               >
@@ -84,34 +85,34 @@
       <!-- =======================
            Followers
       ======================== -->
-      <div v-else-if="tab === 'followers'" class="border border-border rounded bg-card p-4">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold">팔로워</h2>
-          <span class="text-sm text-gray-500">{{ followers.length }} people</span>
+      <div v-else-if="tab === 'followers'" class="border border-border rounded-md bg-card">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h2 class="text-lg font-semibold text-foreground">팔로워</h2>
+          <span class="text-sm text-muted-foreground">{{ followers.length }}명</span>
         </div>
 
-        <p v-if="!followers.length" class="text-sm text-gray-500">
+        <p v-if="!followers.length" class="px-4 py-10 text-center text-sm text-muted-foreground">
           아직 팔로워가 없습니다.
         </p>
 
-        <ul v-else class="space-y-3">
+        <ul v-else class="divide-y divide-border">
           <li
             v-for="u in followers"
             :key="u.userId"
-            class="p-4 rounded bg-white border border-border flex items-center justify-between gap-4"
+            class="px-4 py-3 flex items-center justify-between gap-4 hover:bg-accent/60 transition"
           >
             <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-full bg-orange-100 text-orange-700 font-semibold flex items-center justify-center overflow-hidden">
+              <div class="h-10 w-10 rounded-full bg-primary/20 text-foreground font-semibold flex items-center justify-center overflow-hidden">
                 <span>{{ (u.nickname || 'U').charAt(0) }}</span>
               </div>
               <div>
-                <p class="font-semibold">{{ u.nickname }}</p>
-                <p class="text-xs text-gray-400">@{{ u.userId }}</p>
+                <p class="text-base font-semibold text-foreground">{{ u.nickname }}</p>
+                <p class="text-xs text-muted-foreground">@{{ u.userId }}</p>
               </div>
             </div>
 
             <button
-              class="px-3 py-1 rounded border border-border text-sm hover:bg-orange-50"
+              class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               type="button"
               @click="goProfile(u.userId)"
             >
@@ -124,54 +125,47 @@
       <!-- =======================
            Followings (OUTGOING PENDING + ACCEPTED)
       ======================== -->
-      <div v-else-if="tab === 'followings'" class="border border-border rounded bg-card p-4 space-y-8">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">팔로잉</h2>
-          <span class="text-sm text-gray-500">
-            신청중 {{ outgoingRequests.length }} · 팔로잉 {{ followings.length }}
-          </span>
-        </div>
-
+      <div v-else-if="tab === 'followings'" class="space-y-4">
         <!-- Outgoing requests -->
-        <section class="space-y-3">
-          <h3 class="text-sm font-semibold text-gray-700">팔로우 요청 중</h3>
+        <section class="rounded-md border border-border bg-card">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+            <h2 class="text-lg font-semibold text-foreground">팔로우 요청 중</h2>
+            <span class="text-xs text-muted-foreground">{{ outgoingRequests.length }}명</span>
+          </div>
 
-          <p v-if="!outgoingRequests.length" class="text-sm text-gray-500">
+          <p v-if="!outgoingRequests.length" class="px-4 py-8 text-center text-sm text-muted-foreground">
             신청 중인 팔로우가 없습니다.
           </p>
 
-          <ul v-else class="space-y-3">
+          <ul v-else class="divide-y divide-border">
             <li
               v-for="req in outgoingRequests"
               :key="req.requestId"
-              class="p-4 rounded border border-border flex items-center justify-between gap-4"
+              class="px-4 py-3 flex items-center justify-between gap-4 hover:bg-accent/60 transition"
             >
               <div class="flex items-center gap-3">
-                <div class="h-10 w-10 rounded-full bg-orange-100 text-orange-700 font-semibold flex items-center justify-center overflow-hidden">
+                <div class="h-10 w-10 rounded-full bg-primary/20 text-foreground font-semibold flex items-center justify-center overflow-hidden">
                   <span>{{ (req.nickname || 'U').charAt(0) }}</span>
                 </div>
 
                 <div>
-                  <p class="font-semibold flex items-center gap-2">
+                  <p class="text-base font-semibold flex items-center gap-2 text-foreground">
                     {{ req.nickname }}
-                    <span class="text-xs px-2 py-0.5 rounded-full border border-border bg-white text-gray-600">
-                      PENDING
-                    </span>
                   </p>
-                  <p class="text-xs text-gray-400">신청일 {{ req.createdAt }}</p>
+                  <p class="text-xs text-muted-foreground">신청일: {{ formatDate(req.createdAt) }}</p>
                 </div>
               </div>
 
               <div class="flex items-center gap-2">
                 <button
-                  class="px-3 py-1 rounded bg-white border border-border text-sm"
+                  class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   type="button"
                   @click="goProfile(req.userId)"
                 >
                   프로필
                 </button>
                 <button
-                  class="px-3 py-1 rounded bg-orange-100 text-gray-700 text-sm "
+                  class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors "
                   type="button"
                   @click="cancelOutgoing(req.requestId)"
                 >
@@ -183,39 +177,42 @@
         </section>
 
         <!-- Accepted followings -->
-        <section class="space-y-3">
-          <h3 class="text-sm font-semibold text-gray-700">팔로잉 중</h3>
+        <section class="rounded-md border border-border bg-card">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+            <h2 class="text-lg font-semibold text-foreground">팔로잉 중</h2>
+            <span class="text-xs text-muted-foreground">{{ followings.length }}명</span>
+          </div>
 
-          <p v-if="!followings.length" class="text-sm text-gray-500">
+          <p v-if="!followings.length" class="px-4 py-8 text-center text-sm text-muted-foreground">
             팔로잉 중인 사용자가 없습니다.
           </p>
 
-          <ul v-else class="space-y-3">
+          <ul v-else class="divide-y divide-border">
             <li
               v-for="u in followings"
               :key="u.userId"
-              class="p-4 rounded bg-white border border-border flex items-center justify-between gap-4"
+              class="px-4 py-3 flex items-center justify-between gap-4 hover:bg-accent/60 transition"
             >
               <div class="flex items-center gap-3">
-                <div class="h-10 w-10 rounded-full bg-orange-100 text-orange-700 font-semibold flex items-center justify-center overflow-hidden">
+                <div class="h-10 w-10 rounded-full bg-primary/20 text-foreground font-semibold flex items-center justify-center overflow-hidden">
                   <span>{{ (u.nickname || 'U').charAt(0) }}</span>
                 </div>
                 <div>
-                  <p class="font-semibold">{{ u.nickname }}</p>
-                  <p class="text-xs text-gray-400">@{{ u.userId }}</p>
+                  <p class="text-base font-semibold text-foreground">{{ u.nickname }}</p>
+                  <p class="text-xs text-muted-foreground">@{{ u.userId }}</p>
                 </div>
               </div>
 
               <div class="flex items-center gap-2">
                 <button
-                  class="px-3 py-1 rounded border border-border text-sm "
+                  class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   type="button"
                   @click="goProfile(u.userId)"
                 >
                   프로필
                 </button>
                 <button
-                  class="px-3 py-1 rounded bg-orange-100 text-gray-700 text-sm"
+                  class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   type="button"
                   @click="doUnfollow(u.userId)"
                 >
@@ -230,35 +227,35 @@
       <!-- =======================
            Blocks
       ======================== -->
-      <div v-else class="border border-border rounded bg-card p-4">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold">차단 목록</h2>
-          <span class="text-sm text-gray-500">{{ blocks.length }} people</span>
+      <div v-else class="border border-border rounded-md bg-card">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h2 class="text-lg font-semibold text-foreground">차단 목록</h2>
+          <span class="text-sm text-muted-foreground">{{ blocks.length }}명</span>
         </div>
 
-        <p v-if="!blocks.length" class="text-sm text-gray-500">
+        <p v-if="!blocks.length" class="px-4 py-10 text-center text-sm text-muted-foreground">
           차단한 사용자가 없습니다.
         </p>
 
-        <ul v-else class="space-y-3">
+        <ul v-else class="divide-y divide-border">
           <li
             v-for="u in blocks"
             :key="u.userId"
-            class="p-4 rounded bg-white border border-border flex items-center justify-between gap-4"
+            class="px-4 py-3 flex items-center justify-between gap-4 hover:bg-accent/60 transition"
           >
             <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-full bg-orange-100 text-orange-700 font-semibold flex items-center justify-center overflow-hidden">
+              <div class="h-10 w-10 rounded-full bg-primary/20 text-foreground font-semibold flex items-center justify-center overflow-hidden">
                 <span>{{ (u.nickname || 'U').charAt(0) }}</span>
               </div>
               <div>
-                <p class="font-semibold">{{ u.nickname }}</p>
-                <p class="text-xs text-gray-400">@{{ u.userId }}</p>
+                <p class="text-base font-semibold text-foreground">{{ u.nickname }}</p>
+                <p class="text-xs text-muted-foreground">@{{ u.userId }}</p>
               </div>
             </div>
 
             <div class="flex items-center gap-2">
               <button
-                class="px-3 py-1 rounded border border-border text-sm "
+                class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 type="button"
                 @click="goProfile(u.userId)"
               >
@@ -267,7 +264,7 @@
 
               <!-- ✅ 차단 해제 버튼 -->
               <button
-                class="px-3 py-1 rounded bg-orange-100 text-gray-700 text-sm "
+                class="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors "
                 type="button"
                 :disabled="unblockingId === String(u.userId)"
                 @click="doUnblock(u.userId)"
@@ -286,7 +283,8 @@
 <script>
 import { defineComponent, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import Layout from '../../components/Layout.vue'
+import Layout from '@/components/Layout.vue'
+import PageHeader from '@/components/PageHeader.vue'
 import {
   fetchFollowers,
   fetchFollowings,
@@ -303,7 +301,7 @@ const toStr = (v) => (v === null || v === undefined ? '' : String(v))
 
 export default defineComponent({
   name: 'FollowListView',
-  components: { Layout },
+  components: { Layout, PageHeader },
   setup() {
     const router = useRouter()
 
@@ -338,7 +336,14 @@ export default defineComponent({
 
     const goProfile = (userId) => {
       if (!userId) return
-      router.push({ name: 'UserProfile', query: { userId: String(userId) } })
+      router.push({ name: 'UserProfileParam', params: { userId: String(userId) } })
+    }
+
+    const formatDate = (value) => {
+      if (!value) return ''
+      const d = new Date(value)
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
     }
 
     const loadIncoming = async () => {
@@ -468,7 +473,8 @@ export default defineComponent({
       cancelOutgoing,
       doUnfollow,
       doUnblock,
-      goProfile
+      goProfile,
+      formatDate
     }
   }
 })

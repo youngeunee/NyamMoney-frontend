@@ -21,6 +21,14 @@
           >
             수정하기
           </button>
+          <button
+            class="px-3 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-60"
+            type="button"
+            :disabled="deleting || loading"
+            @click="handleDelete"
+          >
+            삭제하기
+          </button>
         </div>
       </div>
 
@@ -55,7 +63,12 @@
           <div class="p-4 grid gap-3 md:grid-cols-2">
             <div>
               <p class="text-xs text-muted-foreground">금액</p>
-              <p :class="['text-xl font-semibold', detail.isRefund ? 'text-primary' : 'text-secondary']">
+              <p
+                :class="[
+                  'text-xl font-semibold',
+                  detail.isRefund ? 'text-muted-foreground line-through' : detail.transactionType === 'INCOME' ? 'text-primary' : 'text-secondary',
+                ]"
+              >
                 {{ amountPrefix(detail) }}{{ formatCurrency(detail.amount) }}원
               </p>
             </div>
@@ -94,7 +107,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Layout from '@/components/Layout.vue'
 import UiCard from '@/components/ui/Card.vue'
 import UiSpinner from '@/components/ui/Spinner.vue'
-import { fetchTransactionDetail } from '@/services/transaction.service'
+import { deleteTransaction, fetchTransactionDetail } from '@/services/transaction.service'
 
 export default defineComponent({
   name: 'TransactionDetailView',
@@ -104,6 +117,7 @@ export default defineComponent({
     const router = useRouter()
     const transactionId = Number(route.params.transactionId)
     const loading = ref(false)
+    const deleting = ref(false)
     const error = ref('')
     const detail = ref<any | null>(null)
 
@@ -113,7 +127,11 @@ export default defineComponent({
       const d = new Date(value)
       return d.toLocaleString('ko-KR')
     }
-    const amountPrefix = (tx: any) => (tx?.isRefund ? '+' : '-')
+    const amountPrefix = (tx: any) => {
+      const rawType = (tx?.transactionType || tx?.type || '').toString().toLowerCase()
+      if (rawType === 'income') return '+'
+      return '-'
+    }
 
     const load = async () => {
       loading.value = true
@@ -129,12 +147,39 @@ export default defineComponent({
       }
     }
 
+    const handleDelete = async () => {
+      if (!confirm('거래를 삭제하시겠습니까?')) return
+      deleting.value = true
+      error.value = ''
+      try {
+        await deleteTransaction(transactionId)
+        router.push({ name: 'Analytics' })
+      } catch (e) {
+        console.error(e)
+        error.value = '거래를 삭제하지 못했습니다.'
+      } finally {
+        deleting.value = false
+      }
+    }
+
     const goBack = () => router.push({ name: 'Analytics' })
     const goEdit = () => router.push({ name: 'TransactionEdit', params: { transactionId } })
 
     onMounted(load)
 
-    return { transactionId, loading, error, detail, formatCurrency, formatDate, amountPrefix, goBack, goEdit }
+    return {
+      transactionId,
+      loading,
+      deleting,
+      error,
+      detail,
+      formatCurrency,
+      formatDate,
+      amountPrefix,
+      goBack,
+      goEdit,
+      handleDelete,
+    }
   },
 })
 </script>

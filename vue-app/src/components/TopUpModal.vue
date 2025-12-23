@@ -1,6 +1,11 @@
 <template>
   <div>
-    <button @click="open = true" class="px-3 py-1 border border-border rounded">Top Up</button>
+    <button
+      @click="open = true"
+      class="px-4 h-10 rounded-md border border-border bg-card text-sm font-semibold hover:bg-muted transition"
+    >
+      Top Up
+    </button>
     <Modal :show="open" @close="open = false">
       <h3 class="text-lg font-semibold">Top Up</h3>
       <p class="text-sm text-muted-foreground">Top up your account</p>

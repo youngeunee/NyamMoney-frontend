@@ -1,38 +1,40 @@
 <template>
   <Layout>
-    <div class="container mx-auto py-10">
-      <h1 class="text-3xl font-bold mb-6">My Page</h1>
+    <div class="p-6 space-y-6 max-w-5xl mx-auto">
+      <PageHeader title="My Page" description="내 프로필과 설정을 관리하세요." />
 
-      <div>
-        <div class="flex gap-2 mb-4">
-          <button
-            v-for="t in tabs"
-            :key="t.value"
-            @click="tab = t.value"
-            :class="[
-              'px-3 py-1 rounded',
-              tab === t.value ? 'bg-primary text-primary-foreground' : 'border border-border',
-            ]"
-          >
-            {{ t.label }}
-          </button>
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <template v-for="(t, idx) in tabs" :key="t.value">
+            <span v-if="idx > 0" class="text-muted-foreground">|</span>
+            <button
+              @click="tab = t.value"
+              :class="[
+                'px-2 py-1 rounded transition-colors',
+                tab === t.value ? 'text-primary font-semibold' : 'text-foreground hover:text-primary'
+              ]"
+              type="button"
+            >
+              {{ t.label }}
+            </button>
+          </template>
         </div>
 
         <!-- =======================
              Account
         ======================== -->
         <div v-if="tab === 'account'">
-          <div class="border border-border rounded bg-card p-4">
-            <h2 class="text-lg font-medium">내 정보</h2>
+          <div class="border border-border rounded-md bg-card p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-foreground">내 정보</h2>
 
             <div class="space-y-6 mt-4">
               <div class="grid gap-2">
-                <label class="text-sm">아이디</label>
+                <label class="text-sm text-muted-foreground">아이디</label>
                 <UiInput v-model="local.loginId" readonly />
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">닉네임</label>
+                <label class="text-sm text-muted-foreground">닉네임</label>
                 <UiInput v-model="local.nickname" @input="onNicknameInput" />
                 <p
                   v-if="nicknameCheck.message || nicknameCheck.loading"
@@ -44,23 +46,23 @@
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">이름</label>
+                <label class="text-sm text-muted-foreground">이름</label>
                 <UiInput v-model="local.name" />
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">휴대폰 번호</label>
+                <label class="text-sm text-muted-foreground">휴대폰 번호</label>
                 <UiInput v-model="local.phoneNumber" type="tel" placeholder="010-1234-5678" />
                 <p v-if="phoneError" class="text-xs text-red-500">{{ phoneError }}</p>
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">이메일</label>
+                <label class="text-sm text-muted-foreground">이메일</label>
                 <UiInput v-model="local.email" type="email" />
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">Profile Visibility</label>
+                <label class="text-sm text-muted-foreground">Profile Visibility</label>
                 <div class="flex gap-4">
                   <label class="flex items-center space-x-2 cursor-pointer">
                     <input
@@ -85,12 +87,12 @@
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">한 달 예산</label>
+                <label class="text-sm text-muted-foreground">한 달 예산</label>
                 <UiInput v-model="local.monthlyBudget" type="number" />
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">냠 비용</label>
+                <label class="text-sm text-muted-foreground">냠 비용</label>
                 <UiInput v-model="local.triggerBudget" type="number" />
               </div>
 
@@ -98,7 +100,7 @@
               <div class="flex justify-end gap-2 mt-4">
                 <button
                   @click="saveAccount"
-                  class="px-4 py-2 bg-primary text-primary-foreground rounded"
+                  class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
                   :disabled="saving"
                 >
                   {{ saving ? '저장 중...' : '수정하기' }}
@@ -106,7 +108,7 @@
 
                 <button
                   @click="handleDeleteAccount"
-                  class="px-4 py-2 border border-primary text-primary bg-white rounded hover:bg-primary/10"
+                  class="px-4 py-2 rounded-md border border-border text-sm font-semibold text-foreground hover:bg-accent transition"
                   :disabled="deleting"
                 >
                   {{ deleting ? '탈퇴 중...' : '탈퇴하기' }}
@@ -114,18 +116,98 @@
               </div>
             </div>
           </div>
+
+          <UiCard wrapperClass="border border-border">
+            <template #header>
+              <div class="px-4 pt-4 flex items-center justify-between">
+                <div>
+                  <p class="text-xs text-muted-foreground">이번 달 예산 사용률</p>
+                  <p class="text-sm font-semibold">소비 & 시발비용</p>
+                </div>
+                <div v-if="summaryLoading" class="text-xs text-muted-foreground flex items-center gap-2">
+                  <UiSpinner /> 불러오는 중
+                </div>
+              </div>
+            </template>
+
+            <div v-if="!summaryLoading" class="p-4 space-y-6">
+              <div class="grid gap-6 md:grid-cols-2">
+                <div class="flex items-center gap-4">
+                  <div class="relative inline-block donut-wrapper">
+                    <svg viewBox="0 0 36 36" class="h-32 w-32">
+                      <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15"
+                        fill="none"
+                        stroke="#fed253"
+                        stroke-width="6"
+                        stroke-linecap="butt"
+                        :stroke-dasharray="`${impulseUsageCap} ${100 - impulseUsageCap}`"
+                        stroke-dashoffset="25"
+                      />
+                      <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
+                      <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="7" font-weight="700">
+                        {{ Math.round(impulseUsage) }}%
+                      </text>
+                    </svg>
+                  </div>
+                  <div class="space-y-1 text-sm">
+                    <p class="font-semibold text-foreground">이번 달 시발비용</p>
+                    <p class="text-muted-foreground">
+                      {{ formatCurrency(monthlyImpulseAmount) }}원 / {{ formatCurrency(triggerBudget || 0) }}원
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                  <div class="relative inline-block donut-wrapper">
+                    <svg viewBox="0 0 36 36" class="h-32 w-32">
+                      <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15"
+                        fill="none"
+                        stroke="#fed253"
+                        stroke-width="6"
+                        stroke-linecap="butt"
+                        :stroke-dasharray="`${expenseUsageCap} ${100 - expenseUsageCap}`"
+                        stroke-dashoffset="25"
+                      />
+                      <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
+                      <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="7" font-weight="700">
+                        {{ Math.round(expenseUsage) }}%
+                      </text>
+                    </svg>
+                  </div>
+                  <div class="space-y-1 text-sm">
+                    <p class="font-semibold text-foreground">이번 달 소비 금액</p>
+                    <p class="text-muted-foreground">
+                      {{ formatCurrency(monthlyExpenseAmount) }}원 / {{ formatCurrency(monthlyBudget || 0) }}원
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="p-4 text-sm text-muted-foreground text-center">
+              데이터를 불러오는 중입니다.
+            </div>
+          </UiCard>
         </div>
 
         <!-- =======================
              Security (Password)
         ======================== -->
         <div v-if="tab === 'security'" class="space-y-4">
-          <div class="border border-border rounded bg-card p-4">
-            <h2 class="text-lg font-medium">비밀번호 변경</h2>
+          <div class="border border-border rounded-md bg-card p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-foreground">비밀번호 변경</h2>
 
             <form class="space-y-4 mt-4" @submit.prevent="savePassword">
               <div class="grid gap-2">
-                <label class="text-sm">현재 비밀번호</label>
+                <label class="text-sm text-muted-foreground">현재 비밀번호</label>
                 <UiInput
                   v-model="pw.currentPassword"
                   type="password"
@@ -134,12 +216,12 @@
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">새 비밀번호</label>
+                <label class="text-sm text-muted-foreground">새 비밀번호</label>
                 <UiInput v-model="pw.newPassword" type="password" autocomplete="new-password" />
               </div>
 
               <div class="grid gap-2">
-                <label class="text-sm">새 비밀번호 확인</label>
+                <label class="text-sm text-muted-foreground">새 비밀번호 확인</label>
                 <UiInput
                   v-model="pw.newPasswordConfirm"
                   type="password"
@@ -159,7 +241,7 @@
               <div class="text-right">
                 <button
                   type="submit"
-                  class="px-4 py-2 bg-primary text-primary-foreground rounded"
+                  class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
                   :disabled="pwSaving"
                 >
                   {{ pwSaving ? '저장 중...' : '저장하기' }}
@@ -171,8 +253,8 @@
 
         <!-- Notifications / Privacy (기존 유지) -->
         <div v-if="tab === 'notifications'">
-          <div class="border border-border rounded bg-card p-4">
-            <h2 class="text-lg font-medium">Notification Settings</h2>
+          <div class="border border-border rounded-md bg-card p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-foreground">Notification Settings</h2>
             <div class="space-y-4 mt-4">
               <div class="grid md:grid-cols-2 gap-4">
                 <div>
@@ -190,7 +272,7 @@
                   </div>
                 </div>
                 <div>
-                  <label class="text-sm">Notification Frequency</label>
+                  <label class="text-sm text-muted-foreground">Notification Frequency</label>
                   <UiSelect v-model="notif.frequency">
                     <option value="real-time">Real-time</option>
                     <option value="daily">Daily</option>
@@ -200,7 +282,7 @@
               <div class="text-right">
                 <button
                   @click="saveNotifications"
-                  class="px-4 py-2 bg-primary text-primary-foreground rounded"
+                  class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
                 >
                   Save Notification Settings
                 </button>
@@ -210,19 +292,19 @@
         </div>
 
         <div v-if="tab === 'privacy'">
-          <div class="border border-border rounded bg-card p-4">
-            <h2 class="text-lg font-medium">Privacy Settings</h2>
+          <div class="border border-border rounded-md bg-card p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-foreground">Privacy Settings</h2>
             <div class="space-y-4 mt-4">
               <div class="flex items-center justify-between">
-                <label class="text-sm">Share analytics data</label>
+                <label class="text-sm text-muted-foreground">Share analytics data</label>
                 <UiSwitch v-model:modelValue="priv.analyticsSharing" />
               </div>
               <div class="flex items-center justify-between">
-                <label class="text-sm">Allow personalized ads</label>
+                <label class="text-sm text-muted-foreground">Allow personalized ads</label>
                 <UiSwitch v-model:modelValue="priv.personalizedAds" />
               </div>
               <div class="text-right">
-                <button @click="savePrivacy" class="px-4 py-2 bg-primary text-primary-foreground rounded">
+                <button @click="savePrivacy" class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition">
                   Save Privacy Settings
                 </button>
               </div>
@@ -239,11 +321,16 @@
 import { defineComponent, reactive, ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import Layout from '../../components/Layout.vue'
-import UiInput from '../../components/ui/Input.vue'
-import UiSelect from '../../components/ui/Select.vue'
-import UiSwitch from '../../components/ui/Switch.vue'
-import UiCheckbox from '../../components/ui/Checkbox.vue'
+import Layout from '@/components/Layout.vue'
+import PageHeader from '@/components/PageHeader.vue'
+import UiInput from '@/components/ui/Input.vue'
+import UiSelect from '@/components/ui/Select.vue'
+import UiSwitch from '@/components/ui/Switch.vue'
+import UiCheckbox from '@/components/ui/Checkbox.vue'
+import UiCard from '@/components/ui/Card.vue'
+import UiSpinner from '@/components/ui/Spinner.vue'
+import { fetchTransactionDailySummary } from '@/services/transaction.service'
+import { fetchTransactionSummary } from '@/services/transaction.service'
 import {
   fetchMe,
   updateUser,
@@ -252,9 +339,31 @@ import {
   deleteUser,
 } from '@/services/user.service'
 
+const CATEGORY_LABELS = {
+  1: '식사',
+  2: '카페·간식',
+  3: '쇼핑',
+  4: '이동·차량',
+  5: '주거·생활요금',
+  6: '건강·의료',
+  7: '교육',
+  8: '여가·취미',
+  9: '금융',
+  10: '기타',
+}
+
+const PRIMARY_PIE_COLOR = '#fed253'
+const NEUTRAL_PIE_COLORS = [
+  'rgba(0,0,0,0.8)',
+  'rgba(0,0,0,0.65)',
+  'rgba(0,0,0,0.5)',
+  'rgba(0,0,0,0.35)',
+  'rgba(0,0,0,0.25)',
+]
+
 export default defineComponent({
   name: 'MypageView',
-  components: { Layout, UiInput, UiSelect, UiSwitch, UiCheckbox },
+  components: { Layout, PageHeader, UiInput, UiSelect, UiSwitch, UiCheckbox, UiCard, UiSpinner },
   setup() {
     const router = useRouter()
     const auth = useAuthStore()
@@ -290,6 +399,10 @@ export default defineComponent({
     // 알림/프라이버시 (임시)
     const notif = reactive({ email: false, push: false, sms: false, frequency: 'real-time' })
     const priv = reactive({ analyticsSharing: false, personalizedAds: false })
+
+    const summaryLoading = ref(false)
+    const monthlyExpenseAmount = ref(0)
+    const monthlyImpulseAmount = ref(0)
 
     // -------------------------
     // 유틸
@@ -327,6 +440,41 @@ export default defineComponent({
       return (...args) => {
         clearTimeout(timer)
         timer = setTimeout(() => fn(...args), delay)
+      }
+    }
+
+    const formatCurrency = (value) => {
+      return (value ?? 0).toLocaleString('ko-KR')
+    }
+
+    const formatLocalDateTime = (date) => {
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+        date.getHours(),
+      )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+    }
+
+    const startOfMonth = () => {
+      const d = new Date()
+      d.setDate(1)
+      d.setHours(0, 0, 0, 0)
+      return d
+    }
+
+    const loadBudgetSummary = async () => {
+      summaryLoading.value = true
+      try {
+        const now = new Date()
+        const res = await fetchTransactionSummary({
+          from: formatLocalDateTime(startOfMonth()),
+          to: formatLocalDateTime(now),
+        })
+        monthlyExpenseAmount.value = res?.data?.totalExpense ?? 0
+        monthlyImpulseAmount.value = res?.data?.totalImpulseExpense ?? 0
+      } catch (e) {
+        console.error(e)
+      } finally {
+        summaryLoading.value = false
       }
     }
 
@@ -405,7 +553,10 @@ export default defineComponent({
       }
     }
 
-    onMounted(loadMe)
+    onMounted(() => {
+      loadMe()
+      loadBudgetSummary()
+    })
 
     // -------------------------
     // 저장(PATCH /api/v1/users/{userId})
@@ -567,6 +718,21 @@ export default defineComponent({
       alert('Privacy settings saved')
     }
 
+    const impulseUsage = computed(() => {
+      const budget = toNumberOrNull(local.triggerBudget) || 0
+      if (!budget) return 0
+      return Math.max(0, Math.min((monthlyImpulseAmount.value / budget) * 100, 100))
+    })
+
+    const expenseUsage = computed(() => {
+      const budget = toNumberOrNull(local.monthlyBudget) || 0
+      if (!budget) return 0
+      return Math.max(0, Math.min((monthlyExpenseAmount.value / budget) * 100, 100))
+    })
+
+    const impulseUsageCap = computed(() => Math.min(Math.round(impulseUsage.value), 100))
+    const expenseUsageCap = computed(() => Math.min(Math.round(expenseUsage.value), 100))
+
     return {
       loading,
       saving,
@@ -593,6 +759,17 @@ export default defineComponent({
 
       saveNotifications,
       savePrivacy,
+
+      summaryLoading,
+      monthlyExpenseAmount,
+      monthlyImpulseAmount,
+      monthlyBudget: local.monthlyBudget,
+      triggerBudget: local.triggerBudget,
+      expenseUsage,
+      impulseUsage,
+      expenseUsageCap,
+      impulseUsageCap,
+      formatCurrency,
     }
   },
 })

@@ -1,138 +1,142 @@
 <template>
   <Layout>
-    <div class="p-8 max-w-3xl mx-auto">
+    <div class="p-6 space-y-6 max-w-5xl mx-auto">
+      <PageHeader
+        :title="challenge?.title || '챌린지 상세'"
+        description="챌린지 정보를 확인하세요."
+      />
+
       <button
-        class="mb-6 text-sm text-gray-500 hover:underline"
-        @click="goBack">← 목록으로
-      </button>
-
-      <p v-if="loading">불러오는 중...</p>
-
-    <div v-else-if="challenge" class="rounded-xl border p-6 bg-white">
-        <!-- 버튼 영역 -->
-    <!-- 버튼 영역 -->
-<div class="mt-4 flex gap-2">
-
-  <!-- ✅ 생성자 전용 안내 -->
-  <p
-    v-if="isCreator"
-    class="text-sm text-gray-500"
-  >
-    내가 만든 챌린지입니다
-  </p>
-
-  <!-- ✅ 생성자가 아닐 때만 참여 UI 판단 -->
-  <template v-else>
-    <!-- 참여하기 -->
-    <button
-      v-if="canJoin"
-      :disabled="joining"
-      @click="handleJoin"
-      class="px-4 py-2 rounded bg-orange-400 hover:bg-orange-500 text-white"
-    >
-      챌린지 참여
-    </button>
-
-    <!-- 참여취소 -->
-    <button
-      v-if="canCancel"
-      :disabled="joining"
-      @click="handleCancel"
-      class="px-4 py-2 rounded border border-red-400 text-red-500 hover:bg-red-50"
-    >
-      참여 취소
-    </button>
-
-    <!-- 참여 불가 상태 -->
-    <p
-      v-if="!canJoin && !canCancel && !isCreator"
-      class="text-sm text-gray-400"
-    >
-      {{ cannotJoinMessage }}
-    </p>
-
-  </template>
-
-</div>
-
-
-        <h1 class="text-2xl font-bold mb-2">
-          {{ challenge.title }}
-        </h1>
-
-        <p class="text-gray-600 mb-4">
-          {{ challenge.description }}
-        </p>
-
-        <p class="text-sm text-gray-500 mb-2">
-          기간: {{ challenge.startDate }} ~ {{ challenge.endDate }}
-        </p>
-
-        <p class="text-sm mb-4">
-          참여자 {{ challenge.participantCount }}명
-        </p>
-
-        <span
-          v-if="challenge.joined"
-          class="inline-block px-3 py-1 text-sm rounded-full
-                 bg-green-100 text-green-700"
-        >
-          참여 중
-        </span>
-      </div>
-    <button
-        v-if="isCreator"
-        @click="goEdit"
-        class="text-sm text-gray-400"
-        >
-        수정
-      </button>
-      <button
-        v-if="canDelete"
-        @click="handleDelete"
-        class="text-sm text-red-500 hover:text-red-600"
+        class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        @click="goBack"
+        type="button"
       >
-        삭제
+        ← 목록으로
       </button>
-  
-      <!-- 참여자 목록 -->
-    <div class="mt-10">
-      <h2 class="text-lg font-semibold mb-4">
-        챌린지 참여자
-      </h2>
-      
-      <p v-if="safeParticipants.length === 0" class="text-sm text-gray-400">
-        아직 참여자가 없습니다.
-      </p>
-      
-      <ul v-else class="space-y-3">
-        <li
-          v-for="p in safeParticipants"
-          :key="p.userId"
-          class="flex justify-between items-center border rounded-lg px-4 py-3"
-        >
-          <div>
-            <p class="font-medium">{{ p.nickname }}</p>
-            <p class="text-xs text-gray-400">
-              참여일 {{ p.joinedAt }}
-            </p>
-          </div>
-      
-          <div class="text-right">
-            <p class="text-sm">
-              진행률 {{ Math.round(p.progress * 100) }}%
-            </p>
-            <p class="text-xs text-gray-500">
-              {{ p.status }}
-            </p>
-          </div>
-        </li>
-      </ul>
-    </div>
-    
-      </div>
-  </Layout>
 
+      <div v-if="loading" class="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
+        불러오는 중...
+      </div>
+
+      <div v-else-if="challenge" class="space-y-6">
+        <div class="rounded-lg border border-border bg-card p-6 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-muted text-foreground">
+              {{ statusLabel }}
+            </span>
+            <span
+              v-if="challenge.joined"
+              class="px-2 py-1 text-xs font-medium rounded-full bg-primary text-primary-foreground"
+            >
+              참여 중
+            </span>
+            <span
+              v-if="isCreator"
+              class="px-2 py-1 text-xs font-medium rounded-full bg-accent text-foreground"
+            >
+              내가 만든 챌린지
+            </span>
+          </div>
+
+          <p class="text-muted-foreground whitespace-pre-line">
+            {{ challenge.description || '설명이 없습니다.' }}
+          </p>
+
+          <div class="grid sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-foreground">기간</span>
+              <span>{{ challenge.startDate }} ~ {{ challenge.endDate }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-foreground">참여자</span>
+              <span>{{ challenge.participantCount }}명</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button
+              v-if="canJoin"
+              :disabled="joining"
+              @click="handleJoin"
+              class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+              type="button"
+            >
+              챌린지 참여
+            </button>
+
+            <button
+              v-if="canCancel"
+              :disabled="joining"
+              @click="handleCancel"
+              class="px-4 py-2 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-accent transition disabled:opacity-50"
+              type="button"
+            >
+              참여 취소
+            </button>
+
+            <p
+              v-if="!canJoin && !canCancel && !isCreator"
+              class="text-sm text-muted-foreground"
+            >
+              {{ cannotJoinMessage }}
+            </p>
+
+            <button
+              v-if="isCreator"
+              @click="goEdit"
+              class="px-3 py-2 rounded-md border border-border text-sm font-semibold text-foreground hover:bg-accent transition"
+              type="button"
+            >
+              수정
+            </button>
+            <button
+              v-if="canDelete"
+              @click="handleDelete"
+              class="px-3 py-2 rounded-md border border-border text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
+              type="button"
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-foreground">챌린지 참여자</h2>
+            <span class="text-sm text-muted-foreground">총 {{ safeParticipants.length }}명</span>
+          </div>
+
+          <p v-if="safeParticipants.length === 0" class="text-sm text-muted-foreground">
+            아직 참여자가 없습니다.
+          </p>
+
+          <ul v-else class="divide-y divide-border">
+            <li
+              v-for="p in safeParticipants"
+              :key="p.userId"
+              class="flex justify-between items-center py-3"
+            >
+              <div>
+                <p class="font-medium text-foreground">{{ p.nickname }}</p>
+                <p class="text-xs text-muted-foreground">
+                  참여일 {{ p.joinedAt }}
+                </p>
+              </div>
+
+              <div class="text-right text-sm text-muted-foreground space-y-1">
+                <p class="font-medium text-foreground">
+                  진행률 {{ Math.round(p.progress * 100) }}%
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  {{ p.status }}
+                </p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </Layout>
 </template>
 
 <script>
@@ -141,10 +145,11 @@ import { useRouter, useRoute, } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useChallengeStore } from '@/stores/challenge.store'
 import Layout from '@/components/Layout.vue'
+import PageHeader from '@/components/PageHeader.vue'
 import { useAuthStore } from '../../stores/auth'
 
 export default {
-  components: { Layout },
+  components: { Layout, PageHeader },
 
   props: {
     challengeId: {
@@ -169,7 +174,7 @@ export default {
     })
 
     const goBack = () => {
-      router.push({ name: 'Projects'})
+      router.push({ name: 'challengeList'})
     }
 
     const canJoin = computed(() => {
@@ -246,7 +251,7 @@ export default {
       await challengeStore.deleteChallenge(challengeId.value)
 
       // 삭제 후 목록으로 이동 (back 아님)
-      router.replace({ name: 'Projects' })
+      router.replace({ name: 'challengeList' })
     }
 
     // 참여 신청 안 되는
@@ -274,8 +279,15 @@ export default {
       return '참여할 수 없는 챌린지입니다.'
     })
 
-
-
+    const statusLabel = computed(() => {
+      const labelMap = {
+        UPCOMING: '대기',
+        ACTIVE: '진행',
+        ENDED: '종료',
+        CLOSED: '종료',
+      }
+      return labelMap[challenge.value?.status] || '진행 상태'
+    })
 
     return {
       challenge, loading, goBack,
@@ -284,6 +296,7 @@ export default {
       canDelete, handleDelete,
       cannotJoinMessage,
       safeParticipants,
+      statusLabel,
     }
   },
 }

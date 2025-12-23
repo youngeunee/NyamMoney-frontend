@@ -1,85 +1,90 @@
 <template>
   <Layout>
-    <div class="p-8 max-w-xl mx-auto">
-      <h1 class="text-2xl font-bold mb-6">챌린지 생성</h1>
+    <div class="p-6 space-y-6 max-w-3xl mx-auto">
+      <PageHeader title="챌린지 생성" description="새로운 챌린지를 등록하세요." />
+
       <button
-        class="mb-6 text-sm text-gray-500 hover:underline"
-        @click="goBack">← 목록으로
+        class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        @click="goBack"
+        type="button"
+      >
+        ← 목록으로
       </button>
 
-      <form @submit.prevent="handleSubmit" class="space-y-4">
-        <!-- 제목 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">제목</label>
-          <input
-            v-model="form.title"
-            type="text"
-            required
-            class="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <!-- 설명 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">설명</label>
-          <textarea
-            v-model="form.description"
-            rows="3"
-            class="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <!-- 기간 -->
-        <div class="grid grid-cols-2 gap-4">
+      <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+        <form @submit.prevent="handleSubmit" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium mb-1">시작일</label>
+            <label class="block text-sm font-medium text-foreground mb-1">제목</label>
             <input
-              v-model="form.startDate"
-              type="date"
+              v-model="form.title"
+              type="text"
               required
-              :min="minStartDate"
-              class="w-full border rounded px-3 py-2"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1">종료일</label>
-            <input
-              v-model="form.endDate"
-              type="date"
-              required
-              :min="minEndDate"
-              class="w-full border rounded px-3 py-2"
+            <label class="block text-sm font-medium text-foreground mb-1">설명</label>
+            <textarea
+              v-model="form.description"
+              rows="3"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
-        </div>
 
-        <!-- 예산 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">예산</label>
-          <input
-            v-model.number="form.budgetLimit"
-            type="number"
-            required
-            min="0"
-            class="w-full border rounded px-3 py-2"
-          />
-        </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">시작일</label>
+              <input
+                v-model="form.startDate"
+                type="date"
+                required
+                :min="minStartDate"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
 
-        <!-- 버튼 -->
-        <button
-          type="submit"
-          :disabled="creating"
-          class="inline-flex items-center
-                 px-3 py-1.5
-                 text-sm font-medium
-                 rounded-full
-                 bg-yummoney-primary text-black
-                 hover:bg-yummoney-primaryHover
-                 transition
-                 disabled:opacity-50">챌린지 생성
-        </button>
-      </form>
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">종료일</label>
+              <input
+                v-model="form.endDate"
+                type="date"
+                required
+                :min="minEndDate"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">예산</label>
+            <input
+              v-model.number="form.budgetLimit"
+              type="number"
+              required
+              min="0"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              class="px-4 py-2 rounded-md border border-border text-sm font-semibold text-foreground hover:bg-accent transition"
+              @click="goBack"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              :disabled="creating"
+              class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+            >
+              챌린지 생성
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </Layout>
 </template>
@@ -90,9 +95,10 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useChallengeStore } from '@/stores/challenge.store'
 import Layout from '@/components/Layout.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 export default {
-  components: { Layout },
+  components: { Layout, PageHeader },
 
   setup() {
     const router = useRouter()
@@ -147,7 +153,7 @@ export default {
     }
 
     const goBack = () => {
-      router.push({ name: 'Projects'})
+      router.push({ name: 'challengeList'})
     }
 
     return {

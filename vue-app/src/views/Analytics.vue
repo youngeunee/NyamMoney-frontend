@@ -1,53 +1,100 @@
 <template>
   <Layout>
     <div class="p-6 space-y-6">
-      <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold">거래 내역</h1>
-          <p class="text-sm text-muted-foreground">기간을 선택해 지출과 시발비용을 확인하세요.</p>
-        </div>
-        <div class="text-xs text-muted-foreground">총 {{ totalCount }}건</div>
-      </div>
+      <PageHeader title="거래 내역" description="기간을 선택해 지출과 시발비용을 확인하세요.">
+      </PageHeader>
 
       <UiCard>
         <template #header>
           <div class="px-4 pt-4 flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2">
-              <input v-model="filters.from" type="date" class="border border-border rounded-md p-2 text-sm" />
+              <input
+                v-model="filters.from"
+                type="date"
+                class="border border-border rounded-md p-2 text-sm
+                      bg-background text-foreground
+                      dark:bg-background dark:text-foreground
+                      [color-scheme:dark]"
+              />
               <span class="text-xs text-muted-foreground">~</span>
-              <input v-model="filters.to" type="date" class="border border-border rounded-md p-2 text-sm" />
+              <input
+                v-model="filters.to"
+                type="date"
+                class="border border-border rounded-md p-2 text-sm
+                      bg-background text-foreground
+                      dark:bg-background dark:text-foreground
+                      [color-scheme:dark]"
+              />
             </div>
             <button
               class="px-3 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90 transition"
               @click="applyFilters"
             >
-              적용
+              검색
             </button>
             <span v-if="rangeLabel" class="text-xs text-muted-foreground">기간: {{ rangeLabel }}</span>
           </div>
         </template>
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div class="p-4 rounded-md border border-border bg-card">
-            <p class="text-xs text-muted-foreground mb-1">총 지출</p>
-            <p class="text-2xl font-semibold">{{ formatCurrency(summary.totalExpense) }}원</p>
-          </div>
-          <div class="p-4 rounded-md border border-border bg-card">
-            <p class="text-xs text-muted-foreground mb-1">총 시발비용</p>
-            <p class="text-2xl font-semibold text-primary">{{ formatCurrency(summary.totalImpulseExpense) }}원</p>
-          </div>
-          <div class="p-4 rounded-md border border-border bg-card">
-            <p class="text-xs text-muted-foreground mb-1">시발비용 비중</p>
-            <p class="text-2xl font-semibold">
-              {{ summary.totalExpense ? Math.round((summary.totalImpulseExpense / summary.totalExpense) * 100) : 0 }}%
-            </p>
-          </div>
-          <div class="p-4 rounded-md border border-border bg-card">
-            <p class="text-xs text-muted-foreground mb-1">거래 건수</p>
-            <p class="text-2xl font-semibold">{{ totalCount }}건</p>
-          </div>
+          <UiCard>
+            <div class="p-4 space-y-1">
+              <p class="text-xs text-muted-foreground">총 수입</p>
+              <p class="text-2xl font-semibold text-foreground">{{ formatCurrency(summary.totalIncome) }}원</p>
+            </div>
+          </UiCard>
+
+          <UiCard>
+            <div class="p-4 space-y-1">
+              <p class="text-xs text-muted-foreground">총 지출</p>
+              <p class="text-2xl font-semibold text-secondary">{{ formatCurrency(summary.totalExpense) }}원</p>
+            </div>
+          </UiCard>
+
+          <UiCard>
+            <div class="p-4 space-y-1">
+              <p class="text-xs text-muted-foreground">총 냠비용</p>
+              <p class="text-2xl font-semibold text-primary">{{ formatCurrency(summary.totalImpulseExpense) }}원</p>
+            </div>
+          </UiCard>
+          <UiCard>
+            <div class="p-4 space-y-1">
+              <p class="text-xs text-muted-foreground">냠비용 비중</p>
+              <p class="text-2xl font-semibold">
+                {{ summary.totalExpense ? Math.round((summary.totalImpulseExpense / summary.totalExpense) * 100) : 0 }}%
+              </p>
+            </div>
+          </UiCard>
         </div>
       </UiCard>
 
+      <UiCard wrapperClass="border border-border bg-card">
+        <template #header>
+          <div class="px-4 pt-4 flex items-center justify-between">
+            <div>
+              <p class="text-xs text-muted-foreground">카테고리별 소비</p>
+              <p class="text-sm font-semibold">범위 내 합계</p>
+            </div>
+            <div v-if="loading" class="text-xs text-muted-foreground flex items-center gap-2">
+              <UiSpinner /> 불러오는 중
+            </div>
+          </div>
+        </template>
+        <div v-if="categoryRows.length" class="p-4 space-y-3">
+          <div v-for="row in categoryRows" :key="row.key" class="space-y-1">
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-medium">{{ row.name }}</span>
+              <span class="font-semibold">{{ formatCurrency(row.expense) }}원</span>
+            </div>
+            <div class="h-2 rounded-md bg-muted/40 overflow-hidden">
+              <div class="h-2 bg-primary rounded-md" :style="{ width: categoryBarWidth(row) }"></div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="p-6 text-center text-sm text-muted-foreground">
+          카테고리별 데이터가 없습니다.
+        </div>
+      </UiCard>
+      
       <UiCard wrapperClass="border border-border bg-card">
         <template #header>
           <div class="px-4 pt-4 flex items-center justify-between">
@@ -65,7 +112,7 @@
           <button
             v-for="tx in transactions"
             :key="tx.transactionId"
-            class="w-full text-left p-4 flex items-center justify-between gap-3 hover:bg-accent/50 transition-colors"
+            class="w-full text-left p-4 flex items-center justify-between gap-3 hover:bg-muted transition-colors"
             @click="goDetail(tx.transactionId)"
             type="button"
           >
@@ -119,9 +166,23 @@
 import { computed, defineComponent, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Layout from '@/components/Layout.vue'
+import PageHeader from '@/components/PageHeader.vue'
 import UiCard from '@/components/ui/Card.vue'
 import UiSpinner from '@/components/ui/Spinner.vue'
 import { fetchTransactionSummary, fetchTransactions } from '@/services/transaction.service'
+
+const CATEGORY_LABELS: Record<number, string> = {
+  1: 'Category 1',
+  2: 'Category 2',
+  3: 'Category 3',
+  4: 'Category 4',
+  5: 'Category 5',
+  6: 'Category 6',
+  7: 'Category 7',
+  8: 'Category 8',
+  9: 'Category 9',
+  10: 'Category 10',
+}
 
 type TransactionItem = {
   transactionId: number
@@ -131,17 +192,35 @@ type TransactionItem = {
   paymentMethod?: string
   impulseFlag?: boolean
   isRefund?: boolean
+  transactionType?: string
+  type?: 'expense' | 'income' | 'refund'
 }
 
 type Summary = {
   totalExpense: number
   totalImpulseExpense: number
+  totalIncome: number
+}
+
+type CategorySummaryItem = {
+  categoryId?: number
+  categoryName?: string
+  category?: number | string
+  name?: string
+  totalExpense?: number
+  expense?: number
+  amount?: number
+  totalImpulseExpense?: number
+  totalImpulse?: number
+  impulseExpense?: number
+  impulseAmount?: number
 }
 
 export default defineComponent({
   name: 'AnalyticsView',
   components: {
     Layout,
+    PageHeader,
     UiCard,
     UiSpinner,
   },
@@ -158,9 +237,11 @@ export default defineComponent({
     const summary = reactive<Summary>({
       totalExpense: 0,
       totalImpulseExpense: 0,
+      totalIncome: 0,
     })
 
     const transactions = ref<TransactionItem[]>([])
+    const categorySummaries = ref<CategorySummaryItem[]>([])
     const nextCursor = ref<string | null>(null)
     const hasNext = ref(false)
     const totalCount = ref(0)
@@ -204,8 +285,24 @@ export default defineComponent({
       return d.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
     }
 
-    const amountPrefix = (tx: TransactionItem) => (tx.isRefund ? '+' : '-')
-    const amountClass = (tx: TransactionItem) => (tx.isRefund ? 'text-primary' : 'text-secondary')
+    const resolveTransactionType = (tx: TransactionItem): TransactionItem['type'] => {
+      const raw = (tx.transactionType || tx.type || '').toString().toLowerCase()
+      if (tx.isRefund || raw === 'refund') return 'refund'
+      if (raw === 'income') return 'income'
+      return 'expense'
+    }
+
+    const amountPrefix = (tx: TransactionItem) => {
+      const type = tx.type || resolveTransactionType(tx)
+      if (type === 'income') return '+'
+      return '-'
+    }
+    const amountClass = (tx: TransactionItem) => {
+      const type = tx.type || resolveTransactionType(tx)
+      if (type === 'refund') return 'text-muted-foreground line-through'
+      if (type === 'income') return 'text-primary'
+      return 'text-secondary'
+    }
 
     const validateRange = () => {
       if (!filters.from || !filters.to) {
@@ -223,6 +320,7 @@ export default defineComponent({
 
     const mapTransactionType = (tx: TransactionItem) => ({
       ...tx,
+      type: resolveTransactionType(tx),
     })
 
     const loadSummary = async () => {
@@ -231,6 +329,8 @@ export default defineComponent({
       const res = await fetchTransactionSummary({ from, to })
       summary.totalExpense = res.data?.totalExpense ?? 0
       summary.totalImpulseExpense = res.data?.totalImpulseExpense ?? 0
+      summary.totalIncome = res.data?.totalIncome ?? 0
+      categorySummaries.value = res.data?.categorySummaries ?? []
     }
 
     const loadTransactions = async (reset = false) => {
@@ -301,6 +401,21 @@ export default defineComponent({
 
     const goDetail = (id: number) => router.push({ name: 'TransactionDetail', params: { transactionId: id } })
 
+    const categoryRows = computed(() =>
+      (categorySummaries.value || []).map((item, idx) => ({
+        key: item.categoryId ?? idx,
+        name: item.categoryName || CATEGORY_LABELS[item.categoryId ?? 0] || '기타',
+        expense: item.totalExpense ?? item.expense ?? item.amount ?? 0,
+      })),
+    )
+
+    const categoryBarWidth = (row: { expense?: number }) => {
+      const max = Math.max(...categoryRows.value.map((r) => r.expense || 0), 0)
+      if (!max) return '0%'
+      const ratio = ((row.expense || 0) / max) * 100
+      return `${ratio.toFixed(1)}%`
+    }
+
     onMounted(async () => {
       await applyFilters()
       setupObserver()
@@ -314,6 +429,7 @@ export default defineComponent({
       filters,
       summary,
       transactions,
+      categoryRows,
       totalCount,
       loading,
       loadingMore,
@@ -323,6 +439,7 @@ export default defineComponent({
       applyFilters,
       formatCurrency,
       formatDate,
+      categoryBarWidth,
       amountPrefix,
       amountClass,
       goDetail,

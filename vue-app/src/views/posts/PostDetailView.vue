@@ -1,62 +1,63 @@
 <template>
   <Layout>
-    <div>
-      <!-- 목록으로 -->
-      <button class="mb-4 px-3 py-1 border rounded hover:bg-gray-100"
-        @click="goList">목록으로</button>
-
-        
-        <!-- 로딩 -->
-        <p v-if="loading">불러오는 중...</p>
-        
-        <!-- 게시글 -->
-        <div v-else-if="post">
-        <div v-if="post.author?.userId === authStore.userId">
-        <button class="text-sm text-gray-400" @click="goEdit">수정</button>
-        <button class="px-4 py-2 bg-red-500 text-white rounded" @click="handleDelete">삭제</button>
-        </div>
-        <h1 class="text-2xl font-bold mb-2">
-          {{ post.title }}
-        </h1>
-
-        <div class="text-sm text-gray-500 mb-2 flex items-center gap-2">
-          <button
-            v-if="post.author?.nickname"
-            class="text-gray-700 font-medium hover:underline"
-            @click="toggleProfile(post.author.userId)"
-          >
-            {{ post.author.nickname }}
-          </button>
-          <span v-else>익명</span>
-          <span class="text-gray-400">· {{ post.createdAt }}</span>
-        </div>
-        <div v-if="profileTarget === post.author?.userId" class="mb-4">
-          <button
-            class="text-xs text-orange-600 hover:underline"
-            @click="goProfile(post.author.userId)"
-          >
-            프로필 보기 →
+    <div class="p-6 max-w-4xl mx-auto space-y-4">
+      <div class="flex items-center justify-between">
+        <button class="px-3 py-2 rounded-md border border-border text-sm hover:bg-accent transition" @click="goList">
+          목록으로
+        </button>
+        <div v-if="post?.author?.userId === authStore.userId" class="flex items-center gap-2">
+          <button class="text-sm text-muted-foreground hover:text-foreground" @click="goEdit">수정</button>
+          <button class="px-3 py-1.5 rounded-md bg-destructive text-destructive-foreground text-sm" @click="handleDelete">
+            삭제
           </button>
         </div>
+      </div>
 
-        <div class="mb-8 whitespace-pre-line">
-          {{ post.content }}
+      <div class="border border-border rounded-md bg-card">
+        <div class="p-4 border-b border-border">
+          <p class="text-xs text-muted-foreground">게시글</p>
+          <h1 class="text-2xl font-bold text-foreground">{{ post?.title || '제목 없음' }}</h1>
+          <div class="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+            <button
+              v-if="post?.author?.nickname"
+              class="text-foreground font-medium hover:underline"
+              @click="toggleProfile(post.author.userId)"
+            >
+              {{ post.author.nickname }}
+            </button>
+            <span v-else>익명</span>
+            <span class="text-muted-foreground">· {{ post?.createdAt }}</span>
+          </div>
+          <div v-if="profileTarget === post?.author?.userId" class="mt-2">
+            <button
+              class="text-[11px] text-primary hover:underline"
+              @click="goProfile(post.author.userId)"
+            >
+              프로필 보기 →
+            </button>
+          </div>
         </div>
 
-        <!-- 좋아요 영역 -->
-        <div class="flex items-center gap-2 mb-6">
-          <button class="text-2xl transition-transform duration-150 active:scale-125"
-          @click="toggleLike" :aria-label="post.liked ? '좋아요 취소' : '좋아요'">
-            <span v-if="post.liked">게시글 좋아요 취소하기 ❤️</span>
-            <span v-else>게시글 좋아요 누르기 ♡</span>
-          </button>
+        <div class="p-4 space-y-4">
+          <div class="text-sm text-foreground whitespace-pre-line">
+            {{ post?.content }}
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              class="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-accent transition"
+              @click="toggleLike"
+              :aria-label="post?.liked ? '좋아요 취소' : '좋아요'"
+            >
+              <span v-if="post?.liked">❤️ 좋아요 취소</span>
+              <span v-else>♡ 좋아요</span>
+            </button>
+            <span class="text-xs text-muted-foreground">댓글 {{ post?.commentCount }} · 좋아요 {{ post?.likeCount }}</span>
+          </div>
         </div>
+      </div>
 
-        <p class="text-sm text-gray-400 mb-6">
-          댓글 {{ post.commentCount }} · 좋아요 {{ post.likeCount }}
-        </p>
-
-        <!-- 댓글 영역 -->
+      <div class="border border-border rounded-md bg-card p-4">
         <CommentListView :boardId="boardId" :postId="postId" />
       </div>
     </div>
@@ -156,8 +157,8 @@ export default {
     const goProfile = (userId) => {
       if (!userId) return
       router.push({
-        name: 'UserProfile',
-        query: { userId },
+        name: 'UserProfileParam',
+        params: { userId },
       })
     }
 

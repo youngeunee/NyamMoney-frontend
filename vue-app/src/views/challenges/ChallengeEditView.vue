@@ -1,68 +1,76 @@
 <template>
   <Layout>
-    <div class="p-8 max-w-xl mx-auto">
-      <h1 class="text-2xl font-bold mb-6">챌린지 수정</h1>
+    <div class="p-6 space-y-6 max-w-3xl mx-auto">
+      <PageHeader title="챌린지 수정" description="챌린지 내용을 수정하세요." />
 
-      <form @submit.prevent="handleSubmit" class="space-y-4">
-        <!-- 제목 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">제목</label>
-          <input
-            v-model="form.title"
-            type="text"
-            class="w-full border rounded px-3 py-2"
-          />
-        </div>
+      <button
+        class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        type="button"
+        @click="goBack"
+      >
+        ← 목록으로
+      </button>
 
-        <!-- 설명 -->
-        <div>
-          <label class="block text-sm font-medium mb-1">설명</label>
-          <textarea
-            v-model="form.description"
-            rows="3"
-            class="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <!-- 기간 -->
-        <div class="grid grid-cols-2 gap-4">
+      <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
+        <form @submit.prevent="handleSubmit" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium mb-1">시작일</label>
+            <label class="block text-sm font-medium text-foreground mb-1">제목</label>
             <input
-              v-model="form.startDate"
-              type="date"
-              :min="minStartDate"
-              class="w-full border rounded px-3 py-2"
+              v-model="form.title"
+              type="text"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1">종료일</label>
-            <input
-              v-model="form.endDate"
-              type="date"
-              :min="minEndDate"
-              class="w-full border rounded px-3 py-2"
+            <label class="block text-sm font-medium text-foreground mb-1">설명</label>
+            <textarea
+              v-model="form.description"
+              rows="3"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
-        </div>
 
-        <!-- 버튼 -->
-        <button
-          type="submit"
-          :disabled="updating"
-          class="inline-flex items-center
-                 px-3 py-1.5
-                 text-sm font-medium
-                 rounded-full
-                 bg-yummoney-primary text-black
-                 hover:bg-yummoney-primaryHover
-                 transition
-                 disabled:opacity-50"
-        >
-          수정 저장
-        </button>
-      </form>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">시작일</label>
+              <input
+                v-model="form.startDate"
+                type="date"
+                :min="minStartDate"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1">종료일</label>
+              <input
+                v-model="form.endDate"
+                type="date"
+                :min="minEndDate"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              class="px-4 py-2 rounded-md border border-border text-sm font-semibold text-foreground hover:bg-accent transition"
+              @click="goBack"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              :disabled="updating"
+              class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+            >
+              수정 저장
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </Layout>
 </template>
@@ -73,9 +81,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useChallengeStore } from '@/stores/challenge.store'
 import Layout from '@/components/Layout.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 export default {
-  components: { Layout },
+  components: { Layout, PageHeader },
 
   setup() {
     const route = useRoute()
@@ -147,12 +156,17 @@ export default {
       })
     }
 
+    const goBack = () => {
+      router.push({ name: 'challengeList' })
+    }
+
     return {
       form,
       handleSubmit,
       updating,
       minStartDate,
       minEndDate,
+      goBack,
     }
   },
 }

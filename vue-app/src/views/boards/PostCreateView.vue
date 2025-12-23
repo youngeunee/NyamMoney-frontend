@@ -1,43 +1,58 @@
 <template>
   <Layout>
-    <div>
-      <h1 class="text-xl font-bold mb-6">{{ boardTitle }} 글쓰기</h1>
-
-      <!-- 제목 -->
-      <div class="mb-4">
-        <input
-          v-model="title"
-          type="text"
-          placeholder="제목을 입력하세요"
-          class="w-full p-3 border rounded"
-        />
-      </div>
-
-      <!-- 내용 -->
-      <div class="mb-6">
-        <textarea
-          v-model="content"
-          rows="10"
-          placeholder="내용을 입력하세요"
-          class="w-full p-3 border rounded resize-none" />
-      </div>
-
-      <!-- 버튼 영역 -->
-      <div class="flex justify-end gap-2">
+    <div class="p-6 max-w-3xl mx-auto space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs text-muted-foreground">게시글 작성</p>
+          <h1 class="text-2xl font-bold text-foreground">{{ boardTitle }} 글쓰기</h1>
+        </div>
         <button
-          class="px-4 py-2 border rounded"
+          class="px-3 py-2 text-sm rounded-md border border-border hover:bg-accent transition"
+          type="button"
           @click="goList"
         >
           목록으로
         </button>
+      </div>
 
-        <button
-          class="px-4 py-2 bg-orange-500 text-white rounded disabled:opacity-50"
-          :disabled="creating"
-          @click="submit"
-        >
-          {{ creating ? '작성 중...' : '등록' }}
-        </button>
+      <div class="border border-border rounded-md bg-card divide-y divide-border">
+        <div class="p-4 space-y-3">
+          <div class="space-y-1">
+            <label class="text-xs text-muted-foreground">제목</label>
+            <input
+              v-model="title"
+              type="text"
+              placeholder="제목을 입력하세요"
+              class="w-full rounded-md border border-border bg-card p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs text-muted-foreground">내용</label>
+            <textarea
+              v-model="content"
+              rows="10"
+              placeholder="내용을 입력하세요"
+              class="w-full rounded-md border border-border bg-card p-3 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+        </div>
+        <div class="p-4 flex items-center justify-end gap-2">
+          <button
+            class="px-4 py-2 rounded-md border border-border text-sm hover:bg-accent transition"
+            type="button"
+            @click="goList"
+          >
+            목록으로
+          </button>
+          <button
+            class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+            :disabled="creating"
+            type="button"
+            @click="submit"
+          >
+            {{ creating ? '작성 중...' : '등록' }}
+          </button>
+        </div>
       </div>
     </div>
   </Layout>
