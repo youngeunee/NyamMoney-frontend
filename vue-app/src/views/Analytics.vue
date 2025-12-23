@@ -52,6 +52,34 @@
         <template #header>
           <div class="px-4 pt-4 flex items-center justify-between">
             <div>
+              <p class="text-xs text-muted-foreground">카테고리별 소비</p>
+              <p class="text-sm font-semibold">범위 내 합계</p>
+            </div>
+            <div v-if="loading" class="text-xs text-muted-foreground flex items-center gap-2">
+              <UiSpinner /> 불러오는 중
+            </div>
+          </div>
+        </template>
+        <div v-if="categoryRows.length" class="p-4 space-y-3">
+          <div v-for="row in categoryRows" :key="row.key" class="space-y-1">
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-medium">{{ row.name }}</span>
+              <span class="font-semibold">{{ formatCurrency(row.expense) }}원</span>
+            </div>
+            <div class="h-2 rounded-md bg-muted/40 overflow-hidden">
+              <div class="h-2 bg-primary rounded-md" :style="{ width: categoryBarWidth(row) }"></div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="p-6 text-center text-sm text-muted-foreground">
+          카테고리별 데이터가 없습니다.
+        </div>
+      </UiCard>
+
+      <UiCard wrapperClass="border border-border bg-card">
+        <template #header>
+          <div class="px-4 pt-4 flex items-center justify-between">
+            <div>
               <p class="text-xs text-muted-foreground">기간별 거래</p>
               <p class="text-sm font-semibold">최근 순</p>
             </div>
@@ -133,9 +161,34 @@ type TransactionItem = {
   isRefund?: boolean
 }
 
+type CategorySummaryItem = {
+  categoryId?: number
+  categoryName?: string
+  category?: string
+  name?: string
+  totalExpense?: number
+  expense?: number
+  totalImpulseExpense?: number
+  totalImpulse?: number
+  impulseExpense?: number
+}
+
 type Summary = {
   totalExpense: number
   totalImpulseExpense: number
+}
+
+const CATEGORY_LABELS: Record<number, string> = {
+  1: '식사',
+  2: '카페·간식',
+  3: '쇼핑',
+  4: '이동·차량',
+  5: '주거·생활요금',
+  6: '건강·의료',
+  7: '교육',
+  8: '여가·취미',
+  9: '금융',
+  10: '기타',
 }
 
 export default defineComponent({
@@ -159,6 +212,7 @@ export default defineComponent({
       totalExpense: 0,
       totalImpulseExpense: 0,
     })
+    const categorySummaries = ref<CategorySummaryItem[]>([])
 
     const transactions = ref<TransactionItem[]>([])
     const nextCursor = ref<string | null>(null)
@@ -206,6 +260,26 @@ export default defineComponent({
 
     const amountPrefix = (tx: TransactionItem) => (tx.isRefund ? '+' : '-')
     const amountClass = (tx: TransactionItem) => (tx.isRefund ? 'text-primary' : 'text-secondary')
+    const resolveCategoryName = (id: number, item?: CategorySummaryItem) =>
+      item?.categoryName ?? item?.name ?? item?.category ?? CATEGORY_LABELS[id] ?? `카테고리 ${id}`
+    const categoryRows = computed(() => {
+      const list = categorySummaries.value ?? []
+      const rows = []
+      for (let id = 1; id <= 10; id += 1) {
+        const found = list.find((item) => Number(item.categoryId ?? item.category) === id)
+        const expense = found?.totalExpense ?? found?.expense ?? found?.amount ?? 0
+        const impulse = found?.totalImpulseExpense ?? found?.totalImpulse ?? found?.impulseExpense ?? found?.impulseAmount ?? 0
+        if (expense > 0 || impulse > 0) {
+          rows.push({
+            key: String(id),
+            name: resolveCategoryName(id, found),
+            expense,
+            impulse,
+          })
+        }
+      }
+      return rows
+    })
 
     const validateRange = () => {
       if (!filters.from || !filters.to) {
@@ -225,12 +299,35 @@ export default defineComponent({
       ...tx,
     })
 
+    const maxCategoryAmount = computed(() =>
+      categoryRows.value.reduce((max, cur) => Math.max(max, cur.expense), 0),
+    )
+
+    const categoryBarWidth = (row: { expense: number }) => {
+      const max = maxCategoryAmount.value || 1
+      const pct = (row.expense / max) * 100
+      return `${pct}%`
+    }
+
+    const normalizeCategorySummaries = (payload: any): CategorySummaryItem[] => {
+      const list =
+        payload?.categorySummaries ??
+        payload?.categorySummary ??
+        payload?.categoryBreakdown ??
+        payload?.categoryBreakdowns ??
+        payload?.categories ??
+        payload?.categoryList ??
+        []
+      return Array.isArray(list) ? (list as CategorySummaryItem[]) : []
+    }
+
     const loadSummary = async () => {
       const from = formatLocalDateTime(new Date(filters.from))
       const to = formatLocalDateTime(new Date(filters.to), true)
       const res = await fetchTransactionSummary({ from, to })
       summary.totalExpense = res.data?.totalExpense ?? 0
       summary.totalImpulseExpense = res.data?.totalImpulseExpense ?? 0
+      categorySummaries.value = normalizeCategorySummaries(res.data)
     }
 
     const loadTransactions = async (reset = false) => {
@@ -318,6 +415,7 @@ export default defineComponent({
       loading,
       loadingMore,
       error,
+      categoryRows,
       rangeLabel,
       sentinel,
       applyFilters,
@@ -325,6 +423,7 @@ export default defineComponent({
       formatDate,
       amountPrefix,
       amountClass,
+      categoryBarWidth,
       goDetail,
     }
   },
