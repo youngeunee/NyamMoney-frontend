@@ -27,10 +27,12 @@
           </div>
         </template>
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div class="p-4 rounded-md border border-border bg-card">
-            <p class="text-xs text-muted-foreground mb-1">총 지출</p>
-            <p class="text-2xl font-semibold">{{ formatCurrency(summary.totalExpense) }}원</p>
-          </div>
+          <ExpenseIncomeSummary
+            class="md:col-span-2 lg:col-span-2"
+            label="총 지출 / 총 수입"
+            :expense="summary.totalExpense"
+            :income="summary.totalIncome"
+          />
           <div class="p-4 rounded-md border border-border bg-card">
             <p class="text-xs text-muted-foreground mb-1">총 시발비용</p>
             <p class="text-2xl font-semibold text-primary">{{ formatCurrency(summary.totalImpulseExpense) }}원</p>
@@ -45,34 +47,6 @@
             <p class="text-xs text-muted-foreground mb-1">거래 건수</p>
             <p class="text-2xl font-semibold">{{ totalCount }}건</p>
           </div>
-        </div>
-      </UiCard>
-
-      <UiCard wrapperClass="border border-border bg-card">
-        <template #header>
-          <div class="px-4 pt-4 flex items-center justify-between">
-            <div>
-              <p class="text-xs text-muted-foreground">카테고리별 소비</p>
-              <p class="text-sm font-semibold">범위 내 합계</p>
-            </div>
-            <div v-if="loading" class="text-xs text-muted-foreground flex items-center gap-2">
-              <UiSpinner /> 불러오는 중
-            </div>
-          </div>
-        </template>
-        <div v-if="categoryRows.length" class="p-4 space-y-3">
-          <div v-for="row in categoryRows" :key="row.key" class="space-y-1">
-            <div class="flex items-center justify-between text-sm">
-              <span class="font-medium">{{ row.name }}</span>
-              <span class="font-semibold">{{ formatCurrency(row.expense) }}원</span>
-            </div>
-            <div class="h-2 rounded-md bg-muted/40 overflow-hidden">
-              <div class="h-2 bg-primary rounded-md" :style="{ width: categoryBarWidth(row) }"></div>
-            </div>
-          </div>
-        </div>
-        <div v-else class="p-6 text-center text-sm text-muted-foreground">
-          카테고리별 데이터가 없습니다.
         </div>
       </UiCard>
 
@@ -147,6 +121,7 @@
 import { computed, defineComponent, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Layout from '@/components/Layout.vue'
+import ExpenseIncomeSummary from '@/components/ExpenseIncomeSummary.vue'
 import UiCard from '@/components/ui/Card.vue'
 import UiSpinner from '@/components/ui/Spinner.vue'
 import { fetchTransactionSummary, fetchTransactions } from '@/services/transaction.service'
@@ -159,42 +134,21 @@ type TransactionItem = {
   paymentMethod?: string
   impulseFlag?: boolean
   isRefund?: boolean
-}
-
-type CategorySummaryItem = {
-  categoryId?: number
-  categoryName?: string
-  category?: string
-  name?: string
-  totalExpense?: number
-  expense?: number
-  totalImpulseExpense?: number
-  totalImpulse?: number
-  impulseExpense?: number
+  transactionType?: string
+  type?: 'expense' | 'income' | 'refund'
 }
 
 type Summary = {
   totalExpense: number
   totalImpulseExpense: number
-}
-
-const CATEGORY_LABELS: Record<number, string> = {
-  1: '식사',
-  2: '카페·간식',
-  3: '쇼핑',
-  4: '이동·차량',
-  5: '주거·생활요금',
-  6: '건강·의료',
-  7: '교육',
-  8: '여가·취미',
-  9: '금융',
-  10: '기타',
+  totalIncome: number
 }
 
 export default defineComponent({
   name: 'AnalyticsView',
   components: {
     Layout,
+    ExpenseIncomeSummary,
     UiCard,
     UiSpinner,
   },
@@ -211,8 +165,8 @@ export default defineComponent({
     const summary = reactive<Summary>({
       totalExpense: 0,
       totalImpulseExpense: 0,
+      totalIncome: 0,
     })
-    const categorySummaries = ref<CategorySummaryItem[]>([])
 
     const transactions = ref<TransactionItem[]>([])
     const nextCursor = ref<string | null>(null)
@@ -258,28 +212,21 @@ export default defineComponent({
       return d.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
     }
 
-    const amountPrefix = (tx: TransactionItem) => (tx.isRefund ? '+' : '-')
-    const amountClass = (tx: TransactionItem) => (tx.isRefund ? 'text-primary' : 'text-secondary')
-    const resolveCategoryName = (id: number, item?: CategorySummaryItem) =>
-      item?.categoryName ?? item?.name ?? item?.category ?? CATEGORY_LABELS[id] ?? `카테고리 ${id}`
-    const categoryRows = computed(() => {
-      const list = categorySummaries.value ?? []
-      const rows = []
-      for (let id = 1; id <= 10; id += 1) {
-        const found = list.find((item) => Number(item.categoryId ?? item.category) === id)
-        const expense = found?.totalExpense ?? found?.expense ?? found?.amount ?? 0
-        const impulse = found?.totalImpulseExpense ?? found?.totalImpulse ?? found?.impulseExpense ?? found?.impulseAmount ?? 0
-        if (expense > 0 || impulse > 0) {
-          rows.push({
-            key: String(id),
-            name: resolveCategoryName(id, found),
-            expense,
-            impulse,
-          })
-        }
-      }
-      return rows
-    })
+    const resolveTransactionType = (tx: TransactionItem): TransactionItem['type'] => {
+      const raw = (tx.transactionType || tx.type || '').toString().toLowerCase()
+      if (tx.isRefund || raw === 'refund') return 'refund'
+      if (raw === 'income') return 'income'
+      return 'expense'
+    }
+
+    const amountPrefix = (tx: TransactionItem) => {
+      const type = tx.type || resolveTransactionType(tx)
+      return type === 'income' || type === 'refund' ? '+' : '-'
+    }
+    const amountClass = (tx: TransactionItem) => {
+      const type = tx.type || resolveTransactionType(tx)
+      return type === 'income' || type === 'refund' ? 'text-primary' : 'text-secondary'
+    }
 
     const validateRange = () => {
       if (!filters.from || !filters.to) {
@@ -297,29 +244,8 @@ export default defineComponent({
 
     const mapTransactionType = (tx: TransactionItem) => ({
       ...tx,
+      type: resolveTransactionType(tx),
     })
-
-    const maxCategoryAmount = computed(() =>
-      categoryRows.value.reduce((max, cur) => Math.max(max, cur.expense), 0),
-    )
-
-    const categoryBarWidth = (row: { expense: number }) => {
-      const max = maxCategoryAmount.value || 1
-      const pct = (row.expense / max) * 100
-      return `${pct}%`
-    }
-
-    const normalizeCategorySummaries = (payload: any): CategorySummaryItem[] => {
-      const list =
-        payload?.categorySummaries ??
-        payload?.categorySummary ??
-        payload?.categoryBreakdown ??
-        payload?.categoryBreakdowns ??
-        payload?.categories ??
-        payload?.categoryList ??
-        []
-      return Array.isArray(list) ? (list as CategorySummaryItem[]) : []
-    }
 
     const loadSummary = async () => {
       const from = formatLocalDateTime(new Date(filters.from))
@@ -327,7 +253,7 @@ export default defineComponent({
       const res = await fetchTransactionSummary({ from, to })
       summary.totalExpense = res.data?.totalExpense ?? 0
       summary.totalImpulseExpense = res.data?.totalImpulseExpense ?? 0
-      categorySummaries.value = normalizeCategorySummaries(res.data)
+      summary.totalIncome = res.data?.totalIncome ?? 0
     }
 
     const loadTransactions = async (reset = false) => {
@@ -415,7 +341,6 @@ export default defineComponent({
       loading,
       loadingMore,
       error,
-      categoryRows,
       rangeLabel,
       sentinel,
       applyFilters,
@@ -423,7 +348,6 @@ export default defineComponent({
       formatDate,
       amountPrefix,
       amountClass,
-      categoryBarWidth,
       goDetail,
     }
   },

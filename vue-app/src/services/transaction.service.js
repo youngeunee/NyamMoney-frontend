@@ -24,6 +24,10 @@ export function updateTransaction(transactionId, payload) {
   return api.patch(`/v1/transactions/${transactionId}`, payload)
 }
 
+export function deleteTransaction(transactionId) {
+  return api.delete(`/v1/transactions/${transactionId}`)
+}
+
 export function classifyTransactionCategory(params) {
   return api.get('/v1/transactions/classify', { params })
 }

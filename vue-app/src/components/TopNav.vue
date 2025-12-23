@@ -3,29 +3,8 @@
     class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60"
   >
     <div
-      class="container flex h-16 items-center justify-end lg:justify-between px-4 lg:px-6 max-w-6xl mx-auto pl-16 lg:pl-6"
+      class="container flex h-16 items-center justify-end lg:justify-end px-4 lg:px-6 max-w-6xl mx-auto pl-16 lg:pl-6"
     >
-      <!-- 브레드크럼 -->
-      <div class="hidden lg:block">
-        <nav class="flex items-center space-x-2">
-          <RouterLink
-            to="/"
-            class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-          >
-            Home
-          </RouterLink>
-          <template v-for="(segment, index) in pathSegments" :key="segment">
-            <span class="text-muted-foreground/50">•</span>
-            <RouterLink
-              :to="'/' + pathSegments.slice(0, index + 1).join('/')"
-              class="text-sm font-medium text-foreground hover:text-primary transition-colors"
-            >
-              {{ capitalize(segment) }}
-            </RouterLink>
-          </template>
-        </nav>
-      </div>
-
       <!-- 오른쪽 아이콘 영역 -->
       <div class="flex items-center gap-3">
         <Notifications />

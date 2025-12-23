@@ -140,32 +140,37 @@
           <template #header>
             <div class="flex items-center justify-between px-4 pt-4">
               <div>
-                <p class="text-xs text-muted-foreground">월간 요약</p>
-                <p class="text-sm font-semibold">이번 달 통계</p>
+                <p class="text-xs text-muted-foreground">이번달 요약</p>
+                <p class="text-sm font-semibold">이번달 현황</p>
               </div>
               <div v-if="loading" class="text-xs text-muted-foreground flex items-center gap-2">
-                <UiSpinner /> 로딩 중
+                <UiSpinner /> 불러오는 중
               </div>
             </div>
           </template>
           <div class="space-y-3">
+            <ExpenseIncomeSummary
+              label="이달 소비 / 수입"
+              :expense="monthlyExpense"
+              :income="monthlyIncome"
+            />
             <div class="flex items-center justify-between text-sm">
               <span class="text-muted-foreground">총 지출</span>
               <span class="font-semibold">{{ formatCurrency(monthlyExpense) }}원</span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">시발비용</span>
+              <span class="text-muted-foreground">충동 소비</span>
               <span class="font-semibold text-primary">{{ formatCurrency(monthlyImpulse) }}원</span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">시발비용 비중</span>
+              <span class="text-muted-foreground">충동 소비 비율</span>
               <span class="font-semibold">
                 {{ monthlyExpense ? Math.round((monthlyImpulse / monthlyExpense) * 100) : 0 }}%
               </span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">거래 건수</span>
-              <span class="font-semibold">{{ transactionCount }}건</span>
+              <span class="text-muted-foreground">?? ??</span>
+              <span class="font-semibold">{{ transactionCount }}?</span>
             </div>
           </div>
         </UiCard>
@@ -215,6 +220,7 @@
 import { computed, defineComponent, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Layout from '@/components/Layout.vue'
+import ExpenseIncomeSummary from '@/components/ExpenseIncomeSummary.vue'
 import UiCard from '@/components/ui/Card.vue'
 import UiSpinner from '@/components/ui/Spinner.vue'
 import FinancialChart from '@/components/FinancialChart.vue'
@@ -243,12 +249,14 @@ const PIE_COLORS = ['#6366f1', '#22c55e', '#f97316', '#06b6d4', '#a855f7', '#f59
 type Summary = {
   totalExpense?: number
   totalImpulseExpense?: number
+  totalIncome?: number
 }
 
 type DailySummary = {
   date: string
   totalExpense?: number
   totalImpulseExpense?: number
+  totalIncome?: number
   categorySummaries?: CategorySummaryItem[]
 }
 
@@ -260,6 +268,7 @@ type TransactionItem = {
   impulseFlag?: boolean
   isRefund?: boolean
   type?: 'expense' | 'refund' | 'income'
+  transactionType?: string
 }
 
 type CategorySummaryItem = {
@@ -283,6 +292,7 @@ export default defineComponent({
   name: 'HomeView',
   components: {
     Layout,
+    ExpenseIncomeSummary,
     UiCard,
     UiSpinner,
     FinancialChart,
@@ -334,6 +344,7 @@ export default defineComponent({
     const todayImpulse = computed(() => todaySummary.value?.totalImpulseExpense ?? 0)
     const monthlyExpense = computed(() => monthlySummary.value?.totalExpense ?? 0)
     const monthlyImpulse = computed(() => monthlySummary.value?.totalImpulseExpense ?? 0)
+    const monthlyIncome = computed(() => monthlySummary.value?.totalIncome ?? 0)
 
     const chartData = computed(() =>
       dailySummary.value.map((item) => {
@@ -343,6 +354,7 @@ export default defineComponent({
           label,
           expense: item.totalExpense ?? 0,
           impulse: item.totalImpulseExpense ?? 0,
+          income: item.totalIncome ?? 0,
         }
       }),
     )
@@ -419,10 +431,14 @@ export default defineComponent({
     const expenseSegments = computed(() => buildSegments(todayCategoryBars.value, 'amount'))
     const impulseSegments = computed(() => buildSegments(todayCategoryBars.value, 'impulse'))
 
-    const mapTransactionType = (tx: TransactionItem) => {
-      if (tx.isRefund) return 'refund'
+    const resolveTransactionType = (tx: TransactionItem): TransactionItem['type'] => {
+      const raw = (tx.type || tx.transactionType || '').toString().toLowerCase()
+      if (tx.isRefund || raw === 'refund') return 'refund'
+      if (raw === 'income') return 'income'
       return 'expense'
     }
+
+    const mapTransactionType = (tx: TransactionItem) => resolveTransactionType(tx)
 
     const loadDashboard = async () => {
       loading.value = true
@@ -485,6 +501,7 @@ export default defineComponent({
       todayImpulse,
       monthlyExpense,
       monthlyImpulse,
+      monthlyIncome,
       chartData,
       lastFiveDays,
       todayCategoryBars,
