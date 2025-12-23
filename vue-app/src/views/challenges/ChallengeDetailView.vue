@@ -100,6 +100,17 @@
           </div>
         </div>
 
+        <div class="p-8 max-w-3xl mx-auto">
+        <!-- 기존 챌린지 정보 -->
+
+        <!-- 채팅 -->
+        <ChallengeChatView
+          v-if="true"
+          :challenge-id="8"
+          class="mt-8"
+        />
+      </div>
+
         <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-foreground">챌린지 참여자</h2>
@@ -147,9 +158,10 @@ import { useChallengeStore } from '@/stores/challenge.store'
 import Layout from '@/components/Layout.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useAuthStore } from '../../stores/auth'
+import ChallengeChatView from './ChallengeChatView.vue'
 
 export default {
-  components: { Layout, PageHeader },
+  components: { Layout, PageHeader, ChallengeChatView, },
 
   props: {
     challengeId: {
