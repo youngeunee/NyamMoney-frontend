@@ -54,6 +54,34 @@
         <template #header>
           <div class="px-4 pt-4 flex items-center justify-between">
             <div>
+              <p class="text-xs text-muted-foreground">카테고리별 소비</p>
+              <p class="text-sm font-semibold">범위 내 합계</p>
+            </div>
+            <div v-if="loading" class="text-xs text-muted-foreground flex items-center gap-2">
+              <UiSpinner /> 불러오는 중
+            </div>
+          </div>
+        </template>
+        <div v-if="categoryRows.length" class="p-4 space-y-3">
+          <div v-for="row in categoryRows" :key="row.key" class="space-y-1">
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-medium">{{ row.name }}</span>
+              <span class="font-semibold">{{ formatCurrency(row.expense) }}원</span>
+            </div>
+            <div class="h-2 rounded-md bg-muted/40 overflow-hidden">
+              <div class="h-2 bg-primary rounded-md" :style="{ width: categoryBarWidth(row) }"></div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="p-6 text-center text-sm text-muted-foreground">
+          카테고리별 데이터가 없습니다.
+        </div>
+      </UiCard>
+      
+      <UiCard wrapperClass="border border-border bg-card">
+        <template #header>
+          <div class="px-4 pt-4 flex items-center justify-between">
+            <div>
               <p class="text-xs text-muted-foreground">기간별 거래</p>
               <p class="text-sm font-semibold">최근 순</p>
             </div>
@@ -67,7 +95,7 @@
           <button
             v-for="tx in transactions"
             :key="tx.transactionId"
-            class="w-full text-left p-4 flex items-center justify-between gap-3 hover:bg-accent/50 transition-colors"
+            class="w-full text-left p-4 flex items-center justify-between gap-3 hover:bg-muted transition-colors"
             @click="goDetail(tx.transactionId)"
             type="button"
           >
@@ -126,6 +154,19 @@ import UiCard from '@/components/ui/Card.vue'
 import UiSpinner from '@/components/ui/Spinner.vue'
 import { fetchTransactionSummary, fetchTransactions } from '@/services/transaction.service'
 
+const CATEGORY_LABELS: Record<number, string> = {
+  1: 'Category 1',
+  2: 'Category 2',
+  3: 'Category 3',
+  4: 'Category 4',
+  5: 'Category 5',
+  6: 'Category 6',
+  7: 'Category 7',
+  8: 'Category 8',
+  9: 'Category 9',
+  10: 'Category 10',
+}
+
 type TransactionItem = {
   transactionId: number
   occurredAt?: string
@@ -142,6 +183,20 @@ type Summary = {
   totalExpense: number
   totalImpulseExpense: number
   totalIncome: number
+}
+
+type CategorySummaryItem = {
+  categoryId?: number
+  categoryName?: string
+  category?: number | string
+  name?: string
+  totalExpense?: number
+  expense?: number
+  amount?: number
+  totalImpulseExpense?: number
+  totalImpulse?: number
+  impulseExpense?: number
+  impulseAmount?: number
 }
 
 export default defineComponent({

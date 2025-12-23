@@ -8,7 +8,7 @@
       <!-- 오른쪽 아이콘 영역 -->
       <div class="flex items-center gap-3">
         <Notifications />
-        <button class="p-2 rounded-md hover:bg-accent" aria-label="Toggle theme">🌓</button>
+        <ThemeToggle class="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition" />
 
         <!-- 아바타 + 드롭다운 -->
         <div class="relative">
@@ -16,7 +16,7 @@
             class="relative h-9 w-9 rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             @click="isMenuOpen = !isMenuOpen"
           >
-            <div class="h-9 w-9 rounded-full border-2 border-primary/20 overflow-hidden">
+            <div class="h-9 w-9 rounded-full border border-border overflow-hidden bg-muted">
               <img
                 v-if="avatar"
                 :src="avatar"
@@ -45,13 +45,13 @@
             <div class="border-t border-border mt-2 pt-2 space-y-1">
               <RouterLink
                 :to="{ name: 'UserProfile', query: { userId: userId } }"
-                class="block px-2 py-1 hover:bg-accent rounded"
+                class="block px-2 py-1 hover:bg-muted rounded"
                 @click="closeMenu"
               >
                 My Page
               </RouterLink>
               <button
-                class="w-full text-left px-2 py-1 hover:bg-accent rounded"
+                class="w-full text-left px-2 py-1 hover:bg-muted rounded"
                 @click="handleLogout"
               >
                 Log out
@@ -68,10 +68,11 @@ import { defineComponent, computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import Notifications from './Notifications.vue'
+import ThemeToggle from './ThemeToggle.vue'
 
 export default defineComponent({
   name: 'TopNav',
-  components: { RouterLink, Notifications },
+  components: { RouterLink, Notifications, ThemeToggle },
   setup() {
     const route = useRoute()
     const router = useRouter()
