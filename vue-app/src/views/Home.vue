@@ -67,6 +67,80 @@
         <template #header>
           <div class="px-4 pt-4 flex items-center justify-between">
             <div>
+              <p class="text-xs text-muted-foreground">이번 달 예산 사용률</p>
+              <p class="text-sm font-semibold">소비 & 시발비용</p>
+            </div>
+            <div v-if="loading" class="text-xs text-muted-foreground flex items-center gap-2">
+              <UiSpinner /> 불러오는 중
+            </div>
+          </div>
+        </template>
+
+        <div class="p-4 space-y-6 grid gap-6 lg:grid-cols-2">
+          <div class="flex items-center gap-4">
+            <div class="relative inline-block donut-wrapper">
+              <svg viewBox="0 0 36 36" class="h-32 w-32">
+                <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="15"
+                  fill="none"
+                  stroke="#fed253"
+                  stroke-width="6"
+                  stroke-linecap="butt"
+                  :stroke-dasharray="`${impulseUsageCap} ${100 - impulseUsageCap}`"
+                  stroke-dashoffset="25"
+                />
+                <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
+                <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="6" font-weight="700" dominant-baseline="middle">
+                  {{ Math.round(impulseUsage) }}%
+                </text>
+              </svg>
+            </div>
+            <div class="space-y-1 text-sm">
+              <p class="font-semibold text-foreground">이번 달 시발비용</p>
+              <p class="text-muted-foreground">
+                {{ formatCurrency(monthlyImpulse) }}원 / {{ formatCurrency(triggerBudget || 0) }}원
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <div class="relative inline-block donut-wrapper">
+              <svg viewBox="0 0 36 36" class="h-32 w-32">
+                <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="15"
+                  fill="none"
+                  stroke="#fed253"
+                  stroke-width="6"
+                  stroke-linecap="butt"
+                  :stroke-dasharray="`${expenseUsageCap} ${100 - expenseUsageCap}`"
+                  stroke-dashoffset="25"
+                />
+                <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
+                <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="6" font-weight="700" dominant-baseline="middle">
+                  {{ Math.round(expenseUsage) }}%
+                </text>
+              </svg>
+            </div>
+            <div class="space-y-1 text-sm">
+              <p class="font-semibold text-foreground">이번 달 소비 금액</p>
+              <p class="text-muted-foreground">
+                {{ formatCurrency(monthlyExpense) }}원 / {{ formatCurrency(monthlyBudget || 0) }}원
+              </p>
+            </div>
+          </div>
+        </div>
+      </UiCard>
+
+      <UiCard wrapperClass="border border-border">
+        <template #header>
+          <div class="px-4 pt-4 flex items-center justify-between">
+            <div>
               <p class="text-xs text-muted-foreground">오늘 카테고리 비율</p>
               <p class="text-sm font-semibold">총 지출 vs. 시발비용</p>
             </div>
@@ -292,6 +366,7 @@ import {
   fetchTransactionSummary,
   fetchTransactions,
 } from '@/services/transaction.service'
+import { fetchMe } from '@/services/user.service'
 
 const CATEGORY_LABELS: Record<number, string> = {
   1: '식사',
@@ -374,6 +449,8 @@ export default defineComponent({
     const error = ref('')
     const todaySummary = ref<Summary | null>(null)
     const monthlySummary = ref<Summary | null>(null)
+    const monthlyBudget = ref<number>(0)
+    const triggerBudget = ref<number>(0)
     const dailySummary = ref<DailySummary[]>([])
     const todayCategoryBars = ref<CategoryBar[]>([])
     const recentTransactions = ref<TransactionItem[]>([])
@@ -415,6 +492,18 @@ export default defineComponent({
     const monthlyExpense = computed(() => monthlySummary.value?.totalExpense ?? 0)
     const monthlyImpulse = computed(() => monthlySummary.value?.totalImpulseExpense ?? 0)
     const monthlyIncome = computed(() => monthlySummary.value?.totalIncome ?? 0)
+    const expenseUsage = computed(() => {
+      const budget = monthlyBudget.value || 0
+      if (!budget) return 0
+      return Math.max(0, Math.min((monthlyExpense.value / budget) * 100, 100))
+    })
+    const impulseUsage = computed(() => {
+      const budget = triggerBudget.value || 0
+      if (!budget) return 0
+      return Math.max(0, Math.min((monthlyImpulse.value / budget) * 100, 100))
+    })
+    const expenseUsageCap = computed(() => Math.min(Math.round(expenseUsage.value), 100))
+    const impulseUsageCap = computed(() => Math.min(Math.round(impulseUsage.value), 100))
 
     const chartData = computed(() => {
       const sorted = [...dailySummary.value].sort(
@@ -580,7 +669,7 @@ export default defineComponent({
       error.value = ''
       try {
         const now = new Date()
-        const [todayRes, monthRes, dailyRes, txRes] = await Promise.all([
+        const [todayRes, monthRes, dailyRes, txRes, meRes] = await Promise.all([
           fetchTransactionSummary({
             from: formatLocalDateTime(startOfToday()),
             to: formatLocalDateTime(now),
@@ -598,11 +687,14 @@ export default defineComponent({
             to: formatLocalDateTime(now),
             size: 10,
           }),
+          fetchMe(),
         ])
 
         todaySummary.value = todayRes.data
         monthlySummary.value = monthRes.data
         dailySummary.value = dailyRes.data ?? []
+        monthlyBudget.value = meRes?.data?.monthlyBudget ?? 0
+        triggerBudget.value = meRes?.data?.triggerBudget ?? 0
         todayCategoryBars.value = buildTodayCategoryBars(dailySummary.value)
         const items: TransactionItem[] = txRes.data?.items ?? []
         transactionCount.value = txRes.data?.totalCount ?? items.length
@@ -653,6 +745,12 @@ export default defineComponent({
       lastUpdated,
       goAnalytics,
       goCreate,
+      monthlyBudget,
+      triggerBudget,
+      expenseUsage,
+      impulseUsage,
+      expenseUsageCap,
+      impulseUsageCap,
     }
   },
 })

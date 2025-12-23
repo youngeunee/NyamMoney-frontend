@@ -4,6 +4,10 @@ export function fetchTransactionSummary(params) {
   return api.get('/v1/transactions/summary', { params })
 }
 
+export function fetchUserTransactionSummary(userId, params) {
+  return api.get(`/v1/transactions/users/${userId}/summary`, { params })
+}
+
 export function fetchTransactionDailySummary(params) {
   return api.get('/v1/transactions/daily-summary', { params })
 }
