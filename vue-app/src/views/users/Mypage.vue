@@ -1,7 +1,7 @@
 <template>
   <Layout>
-    <div class="p-6 space-y-6 max-w-5xl mx-auto">
-      <PageHeader title="My Page" description="내 프로필과 설정을 관리하세요." />
+    <div class="p-6 space-y-6 max-w-2xl mx-auto">
+      <PageHeader title="내 정보" description="계정 설정과 예산 통계를 관리하세요." />
 
       <div class="space-y-4">
         <div class="flex flex-wrap items-center gap-3 text-sm">
@@ -23,46 +23,56 @@
         <!-- =======================
              Account
         ======================== -->
-        <div v-if="tab === 'account'">
-          <div class="border border-border rounded-md bg-card p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-foreground">내 정보</h2>
+        <div v-if="tab === 'account'" class="max-w-2xl mx-auto">
+          <UiCard wrapperClass="border-2 border-border bg-white shadow-xl">
+            <template #header>
+              <div class="px-4 pt-4">
+                <h2 class="text-2xl font-bold">계정 정보</h2>
+              </div>
+            </template>
 
-            <div class="space-y-6 mt-4">
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">아이디</label>
-                <UiInput v-model="local.loginId" readonly />
+            <div class="p-4 md:p-6 space-y-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">아이디</label>
+                  <UiInput v-model="local.loginId" readonly />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">닉네임</label>
+                  <UiInput v-model="local.nickname" @input="onNicknameInput" />
+                  <p
+                    v-if="nicknameCheck.message || nicknameCheck.loading"
+                    class="text-xs mt-1"
+                    :class="nicknameCheck.available ? 'text-green-600' : 'text-red-500'"
+                  >
+                    {{ nicknameCheck.loading ? '닉네임 확인 중...' : nicknameCheck.message }}
+                  </p>
+                </div>
               </div>
 
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">닉네임</label>
-                <UiInput v-model="local.nickname" @input="onNicknameInput" />
-                <p
-                  v-if="nicknameCheck.message || nicknameCheck.loading"
-                  class="text-xs mt-1"
-                  :class="nicknameCheck.available ? 'text-green-600' : 'text-red-500'"
-                >
-                  {{ nicknameCheck.loading ? '닉네임 확인 중...' : nicknameCheck.message }}
-                </p>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">이름</label>
+                  <UiInput v-model="local.name" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">휴대폰 번호</label>
+                  <UiInput v-model="local.phoneNumber" type="tel" placeholder="010-1234-5678" />
+                  <p v-if="phoneError" class="text-xs text-red-500">{{ phoneError }}</p>
+                </div>
               </div>
 
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">이름</label>
-                <UiInput v-model="local.name" />
-              </div>
-
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">휴대폰 번호</label>
-                <UiInput v-model="local.phoneNumber" type="tel" placeholder="010-1234-5678" />
-                <p v-if="phoneError" class="text-xs text-red-500">{{ phoneError }}</p>
-              </div>
-
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">이메일</label>
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground">이메일</label>
                 <UiInput v-model="local.email" type="email" />
               </div>
 
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">Profile Visibility</label>
+              <div class="space-y-3 pt-2">
+                <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <span class="text-primary">·</span>
+                  프로필 공개 범위
+                </h3>
                 <div class="flex gap-4">
                   <label class="flex items-center space-x-2 cursor-pointer">
                     <input
@@ -86,114 +96,28 @@
                 </div>
               </div>
 
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">한 달 예산</label>
-                <UiInput v-model="local.monthlyBudget" type="number" />
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">한 달 예산</label>
+                  <UiInput v-model="local.monthlyBudget" type="number" />
+                  <p class="text-xs text-muted-foreground">예: 500000</p>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">냠 비용 한도</label>
+                  <UiInput v-model="local.triggerBudget" type="number" />
+                  <p class="text-xs text-muted-foreground">예: 100000</p>
+                </div>
               </div>
 
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">냠 비용</label>
-                <UiInput v-model="local.triggerBudget" type="number" />
-              </div>
+              <div class="flex flex-col sm:flex-row justify-end gap-2 mt-2">
+                <UiButton class="w-full sm:w-auto" @click="saveAccount" :disabled="saving">
+                  {{ saving ? '저장 중...' : '저장하기' }}
+                </UiButton>
 
-              <!-- 버튼 영역: 가로 배치 -->
-              <div class="flex justify-end gap-2 mt-4">
-                <button
-                  @click="saveAccount"
-                  class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
-                  :disabled="saving"
-                >
-                  {{ saving ? '저장 중...' : '수정하기' }}
-                </button>
-
-                <button
-                  @click="handleDeleteAccount"
-                  class="px-4 py-2 rounded-md border border-border text-sm font-semibold text-foreground hover:bg-accent transition"
-                  :disabled="deleting"
-                >
+                <UiButton class="w-full sm:w-auto" variant="outline" @click="handleDeleteAccount" :disabled="deleting">
                   {{ deleting ? '탈퇴 중...' : '탈퇴하기' }}
-                </button>
+                </UiButton>
               </div>
-            </div>
-          </div>
-
-          <UiCard wrapperClass="border border-border">
-            <template #header>
-              <div class="px-4 pt-4 flex items-center justify-between">
-                <div>
-                  <p class="text-xs text-muted-foreground">이번 달 예산 사용률</p>
-                  <p class="text-sm font-semibold">소비 & 시발비용</p>
-                </div>
-                <div v-if="summaryLoading" class="text-xs text-muted-foreground flex items-center gap-2">
-                  <UiSpinner /> 불러오는 중
-                </div>
-              </div>
-            </template>
-
-            <div v-if="!summaryLoading" class="p-4 space-y-6">
-              <div class="grid gap-6 md:grid-cols-2">
-                <div class="flex items-center gap-4">
-                  <div class="relative inline-block donut-wrapper">
-                    <svg viewBox="0 0 36 36" class="h-32 w-32">
-                      <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
-                      <circle
-                        cx="18"
-                        cy="18"
-                        r="15"
-                        fill="none"
-                        stroke="#fed253"
-                        stroke-width="6"
-                        stroke-linecap="butt"
-                        :stroke-dasharray="`${impulseUsageCap} ${100 - impulseUsageCap}`"
-                        stroke-dashoffset="25"
-                      />
-                      <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
-                      <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="7" font-weight="700">
-                        {{ Math.round(impulseUsage) }}%
-                      </text>
-                    </svg>
-                  </div>
-                  <div class="space-y-1 text-sm">
-                    <p class="font-semibold text-foreground">이번 달 시발비용</p>
-                    <p class="text-muted-foreground">
-                      {{ formatCurrency(monthlyImpulseAmount) }}원 / {{ formatCurrency(triggerBudget || 0) }}원
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-4">
-                  <div class="relative inline-block donut-wrapper">
-                    <svg viewBox="0 0 36 36" class="h-32 w-32">
-                      <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
-                      <circle
-                        cx="18"
-                        cy="18"
-                        r="15"
-                        fill="none"
-                        stroke="#fed253"
-                        stroke-width="6"
-                        stroke-linecap="butt"
-                        :stroke-dasharray="`${expenseUsageCap} ${100 - expenseUsageCap}`"
-                        stroke-dashoffset="25"
-                      />
-                      <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
-                      <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="7" font-weight="700">
-                        {{ Math.round(expenseUsage) }}%
-                      </text>
-                    </svg>
-                  </div>
-                  <div class="space-y-1 text-sm">
-                    <p class="font-semibold text-foreground">이번 달 소비 금액</p>
-                    <p class="text-muted-foreground">
-                      {{ formatCurrency(monthlyExpenseAmount) }}원 / {{ formatCurrency(monthlyBudget || 0) }}원
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-else class="p-4 text-sm text-muted-foreground text-center">
-              데이터를 불러오는 중입니다.
             </div>
           </UiCard>
         </div>
@@ -201,57 +125,61 @@
         <!-- =======================
              Security (Password)
         ======================== -->
-        <div v-if="tab === 'security'" class="space-y-4">
-          <div class="border border-border rounded-md bg-card p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-foreground">비밀번호 변경</h2>
+        <div v-if="tab === 'security'" class="space-y-4 max-w-2xl mx-auto">
+          <UiCard wrapperClass="border-2 border-border bg-white shadow-xl">
+            <template #header>
+              <div class="px-4 pt-4">
+                <h2 class="text-2xl font-bold">비밀번호 변경</h2>
+              </div>
+            </template>
 
-            <form class="space-y-4 mt-4" @submit.prevent="savePassword">
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">현재 비밀번호</label>
-                <UiInput
-                  v-model="pw.currentPassword"
-                  type="password"
-                  autocomplete="current-password"
-                />
+            <form class="p-4 md:p-6 space-y-4" @submit.prevent="savePassword">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">현재 비밀번호</label>
+                  <UiInput
+                    v-model="pw.currentPassword"
+                    type="password"
+                    autocomplete="current-password"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">새 비밀번호</label>
+                  <UiInput v-model="pw.newPassword" type="password" autocomplete="new-password" />
+                </div>
               </div>
 
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">새 비밀번호</label>
-                <UiInput v-model="pw.newPassword" type="password" autocomplete="new-password" />
-              </div>
-
-              <div class="grid gap-2">
-                <label class="text-sm text-muted-foreground">새 비밀번호 확인</label>
-                <UiInput
-                  v-model="pw.newPasswordConfirm"
-                  type="password"
-                  autocomplete="new-password"
-                />
-                <p
-                  v-if="passwordsMatch !== null"
-                  class="text-xs mt-1"
-                  :class="passwordsMatch ? 'text-green-600' : 'text-red-500'"
-                >
-                  {{ passwordsMatch ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.' }}
-                </p>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-foreground">새 비밀번호 확인</label>
+                  <UiInput
+                    v-model="pw.newPasswordConfirm"
+                    type="password"
+                    autocomplete="new-password"
+                  />
+                  <p
+                    v-if="passwordsMatch !== null"
+                    class="text-xs mt-1"
+                    :class="passwordsMatch ? 'text-green-600' : 'text-red-500'"
+                  >
+                    {{ passwordsMatch ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.' }}
+                  </p>
+                </div>
               </div>
 
               <p v-if="pwError" class="text-sm text-red-500">{{ pwError }}</p>
 
-              <div class="text-right">
-                <button
-                  type="submit"
-                  class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
-                  :disabled="pwSaving"
-                >
+              <div class="flex flex-col sm:flex-row justify-end gap-2">
+                <UiButton class="w-full sm:w-auto" type="submit" :disabled="pwSaving">
                   {{ pwSaving ? '저장 중...' : '저장하기' }}
-                </button>
+                </UiButton>
               </div>
             </form>
-          </div>
+          </UiCard>
         </div>
 
-        <!-- Notifications / Privacy (기존 유지) -->
+        <!-- Notifications / Privacy (기존 유지)
         <div v-if="tab === 'notifications'">
           <div class="border border-border rounded-md bg-card p-6 shadow-sm">
             <h2 class="text-lg font-semibold text-foreground">Notification Settings</h2>
@@ -310,7 +238,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
 
       </div>
     </div>
@@ -375,8 +303,8 @@ export default defineComponent({
     const tabs = [
       { value: 'account', label: '계정 정보' },
       { value: 'security', label: '비밀번호' },
-      { value: 'notifications', label: '알림' },
-      { value: 'privacy', label: 'Privacy' },
+      // { value: 'notifications', label: '알림' },
+      // { value: 'privacy', label: 'Privacy' },
     ]
     const tab = ref('account')
 

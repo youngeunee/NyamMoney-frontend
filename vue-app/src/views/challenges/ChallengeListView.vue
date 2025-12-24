@@ -76,7 +76,7 @@
           </p>
 
           <div class="space-y-1 text-sm text-muted-foreground">
-            <p>기간 {{ c.startDate }} ~ {{ c.endDate }}</p>
+            <p>{{ formatDateYMD(c.startDate) }} ~ {{ formatDateYMD(c.endDate) }}</p>
             <p>참여자 {{ c.participantCount ?? 0 }}명</p>
           </div>
         </div>
@@ -107,6 +107,14 @@ export default {
     const size = ref(12)
     const sentinel = ref(null)
     let observer = null
+
+    const formatDateYMD = (value) => {
+      if (!value) return '?'
+      const d = new Date(value)
+      if (Number.isNaN(d.getTime())) return '?'
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    }
 
     const statusStyleMap = {
       UPCOMING: { label: '대기' },
@@ -241,6 +249,7 @@ export default {
       showActiveOnly,
       showUpcomingOnly,
       sentinel,
+      formatDateYMD,
     }
   },
 }

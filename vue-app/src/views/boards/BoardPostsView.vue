@@ -75,7 +75,7 @@
         게시글이 없습니다.
       </div>
 
-      <div ref="sentinel" class="h-8"></div>
+      <div ref="sentinel" class="h-2"></div>
     </div>
   </div>
 </template>
