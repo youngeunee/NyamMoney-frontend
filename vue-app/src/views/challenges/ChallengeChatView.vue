@@ -1,30 +1,30 @@
 <template>
-  <div class="border rounded-xl p-4 bg-white">
-    <h3 class="font-semibold mb-3">챌린지 채팅</h3>
-
+  <div class="space-y-3">
     <!-- 메시지 목록 -->
-    <div class="h-64 overflow-y-auto border p-2 mb-3">
+    <div class="h-64 overflow-y-auto border border-border bg-white rounded-md p-3 space-y-2">
       <div
         v-for="(msg, idx) in messages"
         :key="idx"
-        class="mb-1 text-sm"
+        class="text-sm text-foreground"
       >
-        <b>{{ msg.senderNickname }}:</b>
-        {{ msg.content }}
+        <span class="font-semibold text-foreground">{{ msg.senderNickname }}: </span>
+        <span class="text-muted-foreground">{{ msg.content }}</span>
       </div>
+      <p v-if="messages.length === 0" class="text-sm text-muted-foreground">메시지가 없습니다.</p>
     </div>
 
     <!-- 입력 -->
-    <div class="flex gap-2">
+    <div class="flex gap-2 items-center">
       <input
         v-model="input"
         @keyup.enter="send"
-        class="flex-1 border rounded px-2 py-1"
+        class="flex-1 border border-border rounded-md px-3 py-2 text-sm focus:outline-none"
         placeholder="메시지를 입력하세요"
       />
       <button
         @click="send"
-        class="px-3 py-1 rounded bg-orange-400 text-white"
+        class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:cursor-not-allowed"
+        :disabled="!input.trim()"
       >
         전송
       </button>

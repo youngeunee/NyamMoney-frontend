@@ -7,16 +7,17 @@
         <div class="flex flex-wrap items-center gap-3 text-sm">
           <template v-for="(t, idx) in tabs" :key="t.value">
             <span v-if="idx > 0" class="text-muted-foreground">|</span>
-            <button
+            <UiButton
               @click="tab = t.value"
               :class="[
-                'px-2 py-1 rounded transition-colors',
-                tab === t.value ? 'text-primary font-semibold' : 'text-foreground hover:text-primary'
+                'px-2 py-1 rounded transition-colors h-auto',
+                tab === t.value ? 'text-primary font-semibold bg-transparent' : 'text-foreground hover:text-primary bg-transparent'
               ]"
+              variant="ghost"
               type="button"
             >
               {{ t.label }}
-            </button>
+            </UiButton>
           </template>
         </div>
 
@@ -24,23 +25,25 @@
              Account
         ======================== -->
         <div v-if="tab === 'account'" class="max-w-2xl mx-auto">
-          <UiCard wrapperClass="border-2 border-border bg-white shadow-xl">
-            <template #header>
-              <div class="px-4 pt-4">
-                <h2 class="text-2xl font-bold">계정 정보</h2>
-              </div>
-            </template>
-
+          <UiCard wrapperClass="border border-border bg-white shadow-sm">
             <div class="p-4 md:p-6 space-y-6">
               <div class="grid md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-sm font-medium text-foreground">아이디</label>
-                  <UiInput v-model="local.loginId" readonly />
+                  <input
+                    v-model="local.loginId"
+                    readonly
+                    class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+                  />
                 </div>
 
                 <div class="space-y-2">
                   <label class="text-sm font-medium text-foreground">닉네임</label>
-                  <UiInput v-model="local.nickname" @input="onNicknameInput" />
+                  <input
+                    v-model="local.nickname"
+                    @input="onNicknameInput"
+                    class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+                  />
                   <p
                     v-if="nicknameCheck.message || nicknameCheck.loading"
                     class="text-xs mt-1"
@@ -54,18 +57,31 @@
               <div class="grid md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-sm font-medium text-foreground">이름</label>
-                  <UiInput v-model="local.name" />
+                  <input
+                    v-model="local.name"
+                    class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+                  />
                 </div>
                 <div class="space-y-2">
                   <label class="text-sm font-medium text-foreground">휴대폰 번호</label>
-                  <UiInput v-model="local.phoneNumber" type="tel" placeholder="010-1234-5678" />
+                  <input
+                    v-model="local.phoneNumber"
+                    type="tel"
+                    placeholder="010-1234-5678"
+                    class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+                  />
                   <p v-if="phoneError" class="text-xs text-red-500">{{ phoneError }}</p>
                 </div>
               </div>
 
               <div class="space-y-2">
                 <label class="text-sm font-medium text-foreground">이메일</label>
-                <UiInput v-model="local.email" type="email" />
+                <input
+                  v-model="local.email"
+                  type="email"
+                  readonly
+                  class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+                />
               </div>
 
               <div class="space-y-3 pt-2">
@@ -99,12 +115,20 @@
               <div class="grid md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-sm font-medium text-foreground">한 달 예산</label>
-                  <UiInput v-model="local.monthlyBudget" type="number" />
+                  <input
+                    v-model="local.monthlyBudget"
+                    type="number"
+                    class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+                  />
                   <p class="text-xs text-muted-foreground">예: 500000</p>
                 </div>
                 <div class="space-y-2">
                   <label class="text-sm font-medium text-foreground">냠 비용 한도</label>
-                  <UiInput v-model="local.triggerBudget" type="number" />
+                  <input
+                    v-model="local.triggerBudget"
+                    type="number"
+                    class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+                  />
                   <p class="text-xs text-muted-foreground">예: 100000</p>
                 </div>
               </div>
@@ -126,56 +150,54 @@
              Security (Password)
         ======================== -->
         <div v-if="tab === 'security'" class="space-y-4 max-w-2xl mx-auto">
-          <UiCard wrapperClass="border-2 border-border bg-white shadow-xl">
-            <template #header>
-              <div class="px-4 pt-4">
-                <h2 class="text-2xl font-bold">비밀번호 변경</h2>
-              </div>
-            </template>
-
+          <UiCard wrapperClass="border border-border bg-white shadow-sm flex flex-col">
             <form class="p-4 md:p-6 space-y-4" @submit.prevent="savePassword">
-              <div class="grid md:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <label class="text-sm font-medium text-foreground">현재 비밀번호</label>
-                  <UiInput
-                    v-model="pw.currentPassword"
-                    type="password"
-                    autocomplete="current-password"
-                  />
-                </div>
+  <div class="space-y-2">
+    <label class="text-sm font-medium text-foreground">현재 비밀번호</label>
+    <input
+      v-model="pw.currentPassword"
+      type="password"
+      autocomplete="current-password"
+      class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+    />
+  </div>
 
-                <div class="space-y-2">
-                  <label class="text-sm font-medium text-foreground">새 비밀번호</label>
-                  <UiInput v-model="pw.newPassword" type="password" autocomplete="new-password" />
-                </div>
-              </div>
+  <div class="space-y-2">
+    <label class="text-sm font-medium text-foreground">새 비밀번호</label>
+    <input
+      v-model="pw.newPassword"
+      type="password"
+      autocomplete="new-password"
+      class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+    />
+  </div>
 
-              <div class="grid md:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <label class="text-sm font-medium text-foreground">새 비밀번호 확인</label>
-                  <UiInput
-                    v-model="pw.newPasswordConfirm"
-                    type="password"
-                    autocomplete="new-password"
-                  />
-                  <p
-                    v-if="passwordsMatch !== null"
-                    class="text-xs mt-1"
-                    :class="passwordsMatch ? 'text-green-600' : 'text-red-500'"
-                  >
-                    {{ passwordsMatch ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.' }}
-                  </p>
-                </div>
-              </div>
+  <div class="space-y-2">
+    <label class="text-sm font-medium text-foreground">새 비밀번호 확인</label>
+    <input
+      v-model="pw.newPasswordConfirm"
+      type="password"
+      autocomplete="new-password"
+      class="h-11 w-full border border-border rounded px-3 bg-white text-foreground"
+    />
+    <p
+      v-if="passwordsMatch !== null"
+      class="text-xs mt-1"
+      :class="passwordsMatch ? 'text-green-600' : 'text-red-500'"
+    >
+      {{ passwordsMatch ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.' }}
+    </p>
+  </div>
 
-              <p v-if="pwError" class="text-sm text-red-500">{{ pwError }}</p>
+  <p v-if="pwError" class="text-sm text-red-500">{{ pwError }}</p>
 
-              <div class="flex flex-col sm:flex-row justify-end gap-2">
-                <UiButton class="w-full sm:w-auto" type="submit" :disabled="pwSaving">
-                  {{ pwSaving ? '저장 중...' : '저장하기' }}
-                </UiButton>
-              </div>
-            </form>
+  <div class="flex justify-end">
+    <UiButton type="submit" :disabled="pwSaving">
+      {{ pwSaving ? '저장 중...' : '저장하기' }}
+    </UiButton>
+  </div>
+</form>
+
           </UiCard>
         </div>
 
@@ -251,12 +273,12 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Layout from '@/components/Layout.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import UiInput from '@/components/ui/Input.vue'
 import UiSelect from '@/components/ui/Select.vue'
 import UiSwitch from '@/components/ui/Switch.vue'
 import UiCheckbox from '@/components/ui/Checkbox.vue'
 import UiCard from '@/components/ui/Card.vue'
 import UiSpinner from '@/components/ui/Spinner.vue'
+import UiButton from '@/components/ui/Button.vue'
 import { fetchTransactionDailySummary } from '@/services/transaction.service'
 import { fetchTransactionSummary } from '@/services/transaction.service'
 import {
@@ -291,7 +313,7 @@ const NEUTRAL_PIE_COLORS = [
 
 export default defineComponent({
   name: 'MypageView',
-  components: { Layout, PageHeader, UiInput, UiSelect, UiSwitch, UiCheckbox, UiCard, UiSpinner },
+  components: { Layout, PageHeader, UiSelect, UiSwitch, UiCheckbox, UiCard, UiSpinner, UiButton },
   setup() {
     const router = useRouter()
     const auth = useAuthStore()

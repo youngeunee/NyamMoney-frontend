@@ -57,7 +57,13 @@
             <span class="text-muted-foreground">|</span>
             <span>{{ formatDateBrief(post.createdAt) }}</span>
             <span class="text-muted-foreground">|</span>
-            <span>{{ post.author?.nickname || '익명' }}</span>
+            <button
+              type="button"
+              class="text-left underline-offset-2 hover:underline"
+              @click.stop="goProfile(post.author?.userId)"
+            >
+              {{ post.author?.nickname || '익명' }}
+            </button>
           </div>
         </button>
       </div>
@@ -239,6 +245,14 @@ export default {
       })
     }
 
+    const goProfile = (userId) => {
+      if (!userId) return
+      router.push({
+        name: 'UserProfileParam',
+        params: { userId },
+      })
+    }
+
     const isNoticeBoard = computed(() =>
       Number(activeBoardId.value) === 4 ||
       (props.title && String(props.title).includes('공지'))
@@ -299,6 +313,7 @@ export default {
       activeBoardId,
       snippet,
       formatDateBrief,
+      goProfile,
     }
   },
 }

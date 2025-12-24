@@ -1,123 +1,118 @@
 <template>
   <Layout>
-    <div class="p-6 space-y-6 max-w-5xl mx-auto">
-      <PageHeader
-        :title="challenge?.title || '챌린지 상세'"
-        description="챌린지 정보를 확인하세요."
-      />
+    <div class="p-6 space-y-6 max-w-6xl mx-auto w-full">
+      <PageHeader :title="'챌린지'" description="챌린지 정보를 확인하세요." />
 
-      <button
-        class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        @click="goBack"
-        type="button"
-      >
-        ← 목록으로
-      </button>
-
-      <div v-if="loading" class="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
-        불러오는 중...
+      <div v-if="loading" class="rounded-md border border-border bg-white p-6 text-sm text-muted-foreground">
+        불러오는 중입니다...
       </div>
 
-      <div v-else-if="challenge" class="space-y-6">
-        <div class="rounded-lg border border-border bg-card p-6 shadow-sm space-y-4">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-muted text-foreground">
-              {{ statusLabel }}
-            </span>
-            <span
-              v-if="challenge.joined"
-              class="px-2 py-1 text-xs font-medium rounded-full bg-primary text-primary-foreground"
-            >
-              참여 중
-            </span>
-            <span
-              v-if="isCreator"
-              class="px-2 py-1 text-xs font-medium rounded-full bg-accent text-foreground"
-            >
-              내가 만든 챌린지
-            </span>
-          </div>
+      <div v-else-if="challenge" class="space-y-4">
+        <!-- 챌린지 정보 -->
+        <div class="rounded-md border border-border bg-white shadow-sm divide-y divide-border">
+          <div class="p-4 space-y-3">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-muted text-foreground">
+                  {{ statusLabel }}
+                </span>
+                <span
+                  v-if="challenge.joined"
+                  class="px-2 py-1 text-xs font-medium rounded-full bg-primary text-primary-foreground"
+                >
+                  참여 중
+                </span>
+              </div>
 
-          <p class="text-muted-foreground whitespace-pre-line">
-            {{ challenge.description || '설명이 없습니다.' }}
-          </p>
 
-          <div class="grid sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
-            <div class="flex items-center gap-2">
-              <span class="font-medium text-foreground">기간</span>
-              <span>{{ challenge.startDate }} ~ {{ challenge.endDate }}</span>
+              <div class="flex flex-wrap gap-2 justify-end">
+                <UiButton
+                  v-if="canJoin"
+                  :disabled="joining"
+                  class="h-9 px-4 text-sm"
+                  @click="handleJoin"
+                >
+                  챌린지 참여
+                </UiButton>
+
+                <UiButton
+                  v-if="canCancel"
+                  variant="outline"
+                  :disabled="joining"
+                  class="h-9 px-4 text-sm"
+                  @click="handleCancel"
+                >
+                  참여 취소
+                </UiButton>
+
+                <p v-if="!canJoin && !canCancel && !isCreator" class="text-sm text-muted-foreground">
+                  {{ cannotJoinMessage }}
+                </p>
+
+                <UiButton
+                  v-if="isCreator"
+                  variant="ghost"
+                  class="h-9 px-3 text-sm"
+                  @click="goEdit"
+                >
+                  수정
+                </UiButton>
+                <UiButton
+                  v-if="canDelete"
+                  variant="destructive"
+                  class="h-9 px-3 text-sm"
+                  @click="handleDelete"
+                >
+                  삭제
+                </UiButton>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <span class="font-medium text-foreground">참여자</span>
-              <span>{{ challenge.participantCount }}명</span>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-2 pt-2">
-            <button
-              v-if="canJoin"
-              :disabled="joining"
-              @click="handleJoin"
-              class="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
-              type="button"
-            >
-              챌린지 참여
-            </button>
-
-            <button
-              v-if="canCancel"
-              :disabled="joining"
-              @click="handleCancel"
-              class="px-4 py-2 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-accent transition disabled:opacity-50"
-              type="button"
-            >
-              참여 취소
-            </button>
-
-            <p
-              v-if="!canJoin && !canCancel && !isCreator"
-              class="text-sm text-muted-foreground"
-            >
-              {{ cannotJoinMessage }}
+            <h1 class="text-lg font-semibold text-foreground">{{ challenge?.title || '챌린지' }}</h1>
+            <p class="text-sm text-muted-foreground whitespace-pre-line">
+              {{ challenge.description || '설명이 없습니다.' }}
             </p>
 
-            <button
-              v-if="isCreator"
-              @click="goEdit"
-              class="px-3 py-2 rounded-md border border-border text-sm font-semibold text-foreground hover:bg-accent transition"
-              type="button"
-            >
-              수정
-            </button>
-            <button
-              v-if="canDelete"
-              @click="handleDelete"
-              class="px-3 py-2 rounded-md border border-border text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
-              type="button"
-            >
-              삭제
-            </button>
+            <div class="flex-col gap-3 text-sm text-foreground">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold">기간</span>
+                <span class="text-muted-foreground">{{ challenge.startDate }} ~ {{ challenge.endDate }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="font-semibold">참여자</span>
+                <span class="text-muted-foreground">{{ challenge.participantCount }}명</span>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <template v-if="showCountdown">
+                <div class="flex items-center gap-2 text-sm text-foreground">
+                  <span class="font-semibold">시작까지 {{ countdownText }}</span>
+                </div>
+              </template>
+              <template v-else>
+                <div class="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-primary"
+                    :style="{ width: `${challengeProgress}%` }"
+                  />
+                </div>
+                <div class="flex items-center justify-between text-sm text-foreground">
+                  <span class="font-semibold">전체 진행률</span>
+                  <span class="font-semibold">{{ challengeProgress }}%</span>
+                </div>
+              </template>
+            </div>
           </div>
         </div>
 
-        <div class="p-8 max-w-3xl mx-auto">
-        <!-- 기존 챌린지 정보 -->
-
-        <!-- 채팅 -->
-        <ChallengeChatView
-          v-if="true"
-          :challenge-id="challengeId"
-          class="mt-8"
-        />
-      </div>
-
-        <div class="rounded-lg border border-border bg-card p-6 shadow-sm">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-foreground">챌린지 참여자</h2>
+        <!-- 참여자 목록 -->
+        <div class="rounded-md border border-border bg-white shadow-sm">
+          <div class="p-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-foreground">참여자</h2>
             <span class="text-sm text-muted-foreground">총 {{ safeParticipants.length }}명</span>
           </div>
 
-          <p v-if="safeParticipants.length === 0" class="text-sm text-muted-foreground">
+          <p v-if="safeParticipants.length === 0" class="px-4 pb-4 text-sm text-muted-foreground">
             아직 참여자가 없습니다.
           </p>
 
@@ -125,25 +120,34 @@
             <li
               v-for="p in safeParticipants"
               :key="p.userId"
-              class="flex justify-between items-center py-3"
+              class="px-4 py-3 flex justify-between items-center gap-4"
             >
-              <div>
+              <div class="flex-1">
                 <p class="font-medium text-foreground">{{ p.nickname }}</p>
-                <p class="text-xs text-muted-foreground">
-                  참여일 {{ p.joinedAt }}
-                </p>
+                <p class="text-xs text-muted-foreground">참여일 {{ formatDate(p.joinedAt) }}</p>
               </div>
-
-              <div class="text-right text-sm text-muted-foreground space-y-1">
-                <p class="font-medium text-foreground">
-                  진행률 {{ Math.round(p.progress * 100) }}%
-                </p>
-                <p class="text-xs text-muted-foreground">
-                  {{ p.status }}
-                </p>
+              <div class="flex items-center gap-2">
+                <UiButton
+                  v-if="p.userId !== authStore.userId"
+                  variant="outline"
+                  class="h-8 px-3 text-xs"
+                  @click="goProfile(p.userId)"
+                >
+                  프로필 보기
+                </UiButton>
               </div>
             </li>
           </ul>
+        </div>
+
+        <!-- 채팅 -->
+        <div class="rounded-md border border-border bg-white shadow-sm p-4">
+          <h2 class="text-lg font-semibold text-foreground mb-3">채팅</h2>
+          <ChallengeChatView :challenge-id="challengeId" />
+        </div>
+
+        <div class="flex items-center gap-2 justify-end">
+          <UiButton variant="outline" class="h-9 px-3 text-sm" @click="goBack">목록으로</UiButton>
         </div>
       </div>
     </div>
@@ -152,16 +156,17 @@
 
 <script>
 import { onMounted, computed } from 'vue'
-import { useRouter, useRoute, } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useChallengeStore } from '@/stores/challenge.store'
+import { useAuthStore } from '@/stores/auth'
 import Layout from '@/components/Layout.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { useAuthStore } from '../../stores/auth'
+import UiButton from '@/components/ui/Button.vue'
 import ChallengeChatView from './ChallengeChatView.vue'
 
 export default {
-  components: { Layout, PageHeader, ChallengeChatView, },
+  components: { Layout, PageHeader, UiButton, ChallengeChatView },
 
   props: {
     challengeId: {
@@ -174,121 +179,92 @@ export default {
     const challengeStore = useChallengeStore()
     const authStore = useAuthStore()
     const { challengeDetail: challenge, loading, joining, participants } = storeToRefs(challengeStore)
-    const safeParticipants = computed(() => participants.value || [])
+    const safeParticipants = computed(() =>
+      (participants.value || []).filter((p) => String(p.status || '').toUpperCase() !== 'FAILED')
+    )
     const router = useRouter()
     const route = useRoute()
 
-    const challengeId = computed(() => Number(route.params.challengeId))
+    const routeChallengeId = computed(() => Number(route.params.challengeId || props.challengeId))
 
-    onMounted(async() => {
-      await challengeStore.loadChallengeDetail(challengeId.value)
-      await challengeStore.loadChallengeParticipants(challengeId.value)
+    onMounted(async () => {
+      await challengeStore.loadChallengeDetail(routeChallengeId.value)
+      await challengeStore.loadChallengeParticipants(routeChallengeId.value)
     })
 
     const goBack = () => {
-      router.push({ name: 'challengeList'})
+      router.push({ name: 'challengeList' })
     }
+
+    const isCreator = computed(() => challenge.value?.userId === authStore.userId)
 
     const canJoin = computed(() => {
       if (!challenge.value) return false
-      if (isCreator.value) return false   // 생성자 차단
-
-      return (
-        !challenge.value.joined &&
-        ['UPCOMING', 'ACTIVE'].includes(challenge.value.status)
-      )
+      if (isCreator.value) return false
+      return !challenge.value.joined && challenge.value.status === 'UPCOMING'
     })
-
 
     const canCancel = computed(() => {
       if (!challenge.value) return false
-      if (isCreator.value) return false   // 생성자 차단
-
-      return (
-        challenge.value.joined &&
-        ['UPCOMING', 'ACTIVE'].includes(challenge.value.status)
-      )
+      if (isCreator.value) return false
+      return challenge.value.joined && ['UPCOMING', 'ACTIVE'].includes(challenge.value.status)
     })
-
-
 
     const handleJoin = async () => {
+      if (!challenge.value) return
       try {
         await challengeStore.joinChallenge(challenge.value.challengeId)
+        await challengeStore.loadChallengeParticipants(routeChallengeId.value)
       } catch (e) {
-        alert(e.response?.data?.message || '챌린지 참여에 실패했습니다.')
+        alert(e?.response?.data?.message || '챌린지 참여에 실패했습니다.')
       }
     }
 
-
-    const handleCancel = () => {
+    const handleCancel = async () => {
+      if (!challenge.value) return
       if (challenge.value.status === 'ACTIVE') {
-        const ok = confirm(
-          '진행 중인 챌린지를 취소하면 실패 처리되며 다시 참여할 수 없습니다.\n정말 취소하시겠습니까?'
-        )
+        const ok = confirm('진행 중인 챌린지를 취소하면 재참여가 어려울 수 있습니다. 취소하시겠습니까?')
         if (!ok) return
       }
-      challengeStore.cancelChallenge(challenge.value.challengeId)
+      await challengeStore.cancelChallenge(challenge.value.challengeId)
+      await challengeStore.loadChallengeParticipants(routeChallengeId.value)
     }
-
-
 
     const goEdit = () => {
-        //const challengeId = challenge.value.challengeId
-        router.push({
-            name: 'challengeEdit',
-            params: { challengeId },
-        })
+      if (!challenge.value) return
+      router.push({
+        name: 'challengeEdit',
+        params: { challengeId: challenge.value.challengeId },
+      })
     }
-    // 생성한 사람인지 체크
-    const isCreator = computed(() => {
-        if (!challenge.value) return false
-        return challenge.value.userId === authStore.userId
-    })
 
     const canDelete = computed(() => {
       if (!challenge.value) return false
-      return (
-        isCreator.value &&
-        challenge.value.status === 'UPCOMING'
-      )
+      return isCreator.value && challenge.value.status === 'UPCOMING'
     })
 
     const handleDelete = async () => {
-      //const challengeId = challenge.value.challengeId
-      if (!confirm('이 챌린지를 삭제하시겠습니까?\n참여자 전원에게 환불됩니다.')) {
-        return
-      }
-
-      await challengeStore.deleteChallenge(challengeId.value)
-
-      // 삭제 후 목록으로 이동 (back 아님)
+      if (!challenge.value) return
+      const ok = confirm('이 챌린지를 삭제하시겠습니까?')
+      if (!ok) return
+      await challengeStore.deleteChallenge(routeChallengeId.value)
       router.replace({ name: 'challengeList' })
     }
 
-    // 참여 신청 안 되는
+    const goProfile = (userId) => {
+      if (!userId) return
+      router.push({ name: 'UserProfileParam', params: { userId } })
+    }
+
     const cannotJoinMessage = computed(() => {
       if (!challenge.value) return ''
-      // 생성자는 별도 처리
-      if (isCreator.value) {
-        return '내가 만든 챌린지입니다.'
+      if (isCreator.value) return '내가 만든 챌린지는 참여할 수 없습니다.'
+      if (challenge.value.status === 'ENDED') return '종료된 챌린지입니다.'
+      if (challenge.value.status === 'CLOSED') return '마감된 챌린지입니다.'
+      if (challenge.value.status === 'ACTIVE' && !challenge.value.joined) {
+        return '진행 중인 챌린지입니다.'
       }
-      // 이미 종료됨
-      if (challenge.value.status === 'ENDED') {
-        return '이미 종료된 챌린지입니다.'
-      }
-      // 삭제(마감)됨
-      if (challenge.value.status === 'CLOSED') {
-        return '마감된 챌린지입니다.'
-      }
-      // 진행 중 + 이미 취소(실패)
-      if (
-        challenge.value.status === 'ACTIVE' &&
-        !challenge.value.joined
-      ) {
-        return '진행 중 취소한 챌린지는 다시 참여할 수 없습니다.'
-      }
-      return '참여할 수 없는 챌린지입니다.'
+      return '참여가 불가능한 챌린지입니다.'
     })
 
     const statusLabel = computed(() => {
@@ -301,14 +277,76 @@ export default {
       return labelMap[challenge.value?.status] || '진행 상태'
     })
 
+    const clampPercent = (value) => {
+      const n = Number.isFinite(value) ? value : 0
+      return Math.min(100, Math.max(0, Math.round(n)))
+    }
+
+    const challengeProgress = computed(() => {
+      const startStr = challenge.value?.startDate
+      const endStr = challenge.value?.endDate
+      if (!startStr || !endStr) return 0
+
+      const start = new Date(startStr)
+      const end = new Date(endStr)
+      const today = new Date()
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
+
+      const totalMs = end.getTime() - start.getTime()
+      if (totalMs <= 0) {
+        return today.getTime() >= start.getTime() ? 100 : 0
+      }
+
+      const elapsed = today.getTime() - start.getTime()
+      return clampPercent((elapsed / totalMs) * 100)
+    })
+
+    const showCountdown = computed(() => {
+      if (!challenge.value) return false
+      if (challenge.value.status !== 'UPCOMING') return false
+      const start = new Date(challenge.value.startDate)
+      return Number.isFinite(start.getTime()) && start.getTime() > Date.now()
+    })
+
+    const countdownText = computed(() => {
+      if (!showCountdown.value) return ''
+      const start = new Date(challenge.value.startDate)
+      const diffMs = start.getTime() - Date.now()
+      const dayMs = 24 * 60 * 60 * 1000
+      const days = Math.max(0, Math.ceil(diffMs / dayMs))
+      return days > 0 ? `${days}일` : '오늘 시작'
+    })
+
+    const formatDate = (value) => {
+      if (!value) return ''
+      const d = new Date(value)
+      if (Number.isNaN(d.getTime())) return value
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    }
+
     return {
-      challengeId,
-      challenge, loading, goBack,
-      canJoin, canCancel, handleJoin, handleCancel, joining,
-      goEdit, isCreator,
-      canDelete, handleDelete,
-      cannotJoinMessage,
+      challengeId: routeChallengeId,
+      challenge,
+      loading,
+      joining,
+      authStore,
       safeParticipants,
+      challengeProgress,
+      showCountdown,
+      countdownText,
+      formatDate,
+      canJoin,
+      canCancel,
+      handleJoin,
+      handleCancel,
+      goEdit,
+      goBack,
+      goProfile,
+      isCreator,
+      canDelete,
+      handleDelete,
+      cannotJoinMessage,
       statusLabel,
     }
   },
