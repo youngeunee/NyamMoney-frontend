@@ -55,6 +55,7 @@ export default {
   },
 
   mounted() {
+    console.log('[CHAT] mounted, challengeId =', this.challengeId)
     connectChallengeChat(this.challengeId, (message) => {
       this.messages.push(message)
       this.$nextTick(() => {

@@ -5,21 +5,17 @@ let stompClient = null
 
 export function connectChallengeChat(challengeId, onMessage) {
   const token = Cookies.get('accessToken')
-  console.log('WS TOKEN:', token)
-
-
+  console.log('[WS] token =', token)
   stompClient = new Client({
-    // ✅ Spring STOMP에서는 이 방식이 정답
     webSocketFactory: () =>
-      new WebSocket(`ws://localhost:8080/ws-challenge-chat?token=${token}`),
-    
+      new WebSocket('ws://localhost:8080/ws-challenge-chat'),
 
-    // ✅ 재연결 폭주 방지
-    reconnectDelay: 5000,
-
+    // CONNECT 단계에서 JWT 전달
     connectHeaders: {
       Authorization: `Bearer ${token}`
     },
+
+    reconnectDelay: 5000,
 
     debug: () => {},
 
