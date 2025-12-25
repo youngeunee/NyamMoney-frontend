@@ -1,19 +1,19 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
-// 공통 axios 인스턴스
+const baseURL =
+  import.meta.env.VITE_API_BASE_URL || '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   withCredentials: true,
 })
 
-// ======= Request Interceptor: 별도 헤더 없이 쿠키 인증 사용 =======
 api.interceptors.request.use(
   (config) => config,
   (error) => Promise.reject(error),
 )
 
-// ======= Response Interceptor: 401 발생 시 refresh 시도 =======
 let isRefreshing = false
 let refreshSubscribers = []
 
@@ -33,7 +33,6 @@ api.interceptors.response.use(
     const authStore = useAuthStore()
     const url = originalConfig?.url || ''
 
-    // signup/password-reset/refresh 요청에서는 추가 refresh 시도하지 않는다
     const isAuthFlow =
       url.includes('/v1/auth/refresh') ||
       url.includes('/v1/auth/signup') ||
@@ -45,10 +44,7 @@ api.interceptors.response.use(
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           addRefreshSubscriber((success) => {
-            if (!success) {
-              reject(error)
-              return
-            }
+            if (!success) return reject(error)
             resolve(api(originalConfig))
           })
         })
