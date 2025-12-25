@@ -36,20 +36,20 @@
                     </template>
 
                     <template v-else>
-                      <UiButton
-                        class="w-full md:w-auto"
-                        :variant="followButtonVariant"
-                        :disabled="profile.isBlocked || loadingFollow"
-                        @click="toggleFollow"
-                      >
-                        {{ followButtonLabel }}
-                      </UiButton>
+                    <UiButton
+                      class="w-full md:w-auto"
+                      :variant="followButtonVariant"
+                      :disabled="profile.isBlocked || loadingFollow"
+                      @click="toggleFollow"
+                    >
+                      {{ followButtonLabel }}
+                    </UiButton>
 
-                      <UiButton
-                        class="w-full md:w-auto bg-gray-100 text-gray-700"
-                        variant="outline"
-                        :disabled="loadingBlock"
-                        @click="toggleBlock"
+                    <UiButton
+                      class="w-full md:w-auto bg-gray-100 text-gray-700"
+                      variant="outline"
+                      :disabled="loadingBlock"
+                      @click="toggleBlock"
                       >
                         {{ profile.isBlocked ? '차단 해제' : '차단' }}
                       </UiButton>
@@ -83,7 +83,6 @@
             </div>
           </div>
 
-          <!-- 예산 통계 (조건부) -->
           <UiCard
             v-if="showBudgetUsage"
             wrapperClass="border border-border bg-white shadow-sm"
@@ -427,7 +426,6 @@ const isMyProfile = computed(() => {
   if (!profile.userId || !myUserId.value) return false
   return String(profile.userId) === String(myUserId.value)
 })
-
 const followButtonLabel = computed(() => {
   if (profile.isBlocked) return '차단됨'
   if (profile.followStatus === 'PENDING') return '신청 중'

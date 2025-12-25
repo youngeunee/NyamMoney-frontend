@@ -994,8 +994,6 @@ export default defineComponent({
 
     onMounted(() => {
       loadDashboard()
-      requestMonthlyAnalysis()
-      requestDailyAnalysis()
     })
 
     const goAnalytics = () => {
