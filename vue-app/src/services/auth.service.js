@@ -31,3 +31,13 @@ export function verifyPasswordResetCode(payload) {
 export function confirmPasswordReset(payload) {
   return api.post('/v1/auth/password/confirm', payload)
 }
+
+// 회원가입: 인증코드 발송
+export function sendSignupCode(payload) {
+  return api.post('/v1/auth/signup/code', payload)
+}
+
+// 회원가입: 인증코드 검증
+export function verifySignupCode(payload) {
+  return api.post('/v1/auth/signup/verify', payload)
+}

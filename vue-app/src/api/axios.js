@@ -31,8 +31,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalConfig = error.config
     const authStore = useAuthStore()
+    const url = originalConfig?.url || ''
 
-    if (error.response && error.response.status === 401 && !originalConfig._retry) {
+    // signup/password-reset/refresh 요청에서는 추가 refresh 시도하지 않는다
+    const isAuthFlow =
+      url.includes('/v1/auth/refresh') ||
+      url.includes('/v1/auth/signup') ||
+      url.includes('/v1/auth/password')
+
+    if (error.response && error.response.status === 401 && !originalConfig._retry && !isAuthFlow) {
       originalConfig._retry = true
 
       if (isRefreshing) {

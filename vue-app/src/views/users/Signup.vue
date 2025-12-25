@@ -58,8 +58,47 @@
         <!-- email -->
         <div class="space-y-2">
           <label class="text-sm font-medium" for="email">이메일 *</label>
-          <input id="email" v-model="form.email" type="email" required
-            class="h-11 w-full border border-border rounded px-2 py-1" placeholder="your@email.com" />
+          <div class="flex gap-2">
+            <input
+              id="email"
+              v-model="form.email"
+              type="email"
+              required
+              class="h-11 w-full border border-border rounded px-2 py-1"
+              placeholder="your@email.com"
+              :disabled="emailVerified"
+            />
+            <UiButton
+              type="button"
+              variant="outline"
+              class="h-11 whitespace-nowrap"
+              :disabled="emailSending || !form.email"
+              @click="sendCode"
+            >
+              {{ emailVerified ? '인증완료' : emailSending ? '전송 중...' : '인증요청' }}
+            </UiButton>
+          </div>
+          <div class="flex gap-2 items-center">
+            <input
+              v-model="emailCode"
+              type="text"
+              class="h-11 flex-1 border border-border rounded px-2 py-1"
+              placeholder="인증번호 6자리"
+              :disabled="emailVerified"
+            />
+            <UiButton
+              type="button"
+              variant="secondary"
+              class="h-11 whitespace-nowrap"
+              :disabled="emailVerified || emailVerifying || !emailCode"
+              @click="verifyCode"
+            >
+              {{ emailVerified ? '완료' : emailVerifying ? '확인 중...' : '인증확인' }}
+            </UiButton>
+          </div>
+          <p v-if="emailMessage" :class="['text-xs', emailVerified ? 'text-green-600' : 'text-red-500']">
+            {{ emailMessage }}
+          </p>
         </div>
 
         <!-- password / confirm -->
@@ -153,6 +192,7 @@ import {
   checkLoginId as checkLoginIdApi,
   checkNickname as checkNicknameApi,
 } from '@/services/user.service'
+import { sendSignupCode, verifySignupCode } from '@/services/auth.service'
 
 export default {
   name: 'SignupView',
@@ -162,6 +202,11 @@ export default {
 
     const loading = ref(false)
     const errorMessage = ref('')
+    const emailSending = ref(false)
+    const emailVerifying = ref(false)
+    const emailVerified = ref(false)
+    const emailMessage = ref('')
+    const emailCode = ref('')
 
     function debounce(fn, delay) {
       let timer = null
@@ -265,6 +310,10 @@ export default {
       errorMessage.value = ''
       const phoneDigits = normalizePhoneNumber(form.phoneNumber)
 
+      if (!emailVerified.value) {
+        alert('이메일 인증을 완료해주세요.')
+        return
+      }
       if (!isValidKoreanMobile(phoneDigits)) {
         alert('전화번호 형식이 올바르지 않습니다. 예) 010-1234-1234')
         return
@@ -310,6 +359,36 @@ export default {
       }
     }
 
+    const sendCode = async () => {
+      if (!form.email) return
+      emailMessage.value = ''
+      emailSending.value = true
+      try {
+        await sendSignupCode({ email: form.email })
+        emailMessage.value = '인증번호를 전송했습니다. 이메일을 확인해주세요.'
+      } catch (e) {
+        emailMessage.value = e?.response?.data?.message || '인증번호 전송에 실패했습니다.'
+      } finally {
+        emailSending.value = false
+      }
+    }
+
+    const verifyCode = async () => {
+      if (!form.email || !emailCode.value) return
+      emailMessage.value = ''
+      emailVerifying.value = true
+      try {
+        await verifySignupCode({ email: form.email, verificationCode: emailCode.value })
+        emailVerified.value = true
+        emailMessage.value = '이메일 인증이 완료되었습니다.'
+      } catch (e) {
+        emailVerified.value = false
+        emailMessage.value = e?.response?.data?.message || '인증번호가 올바르지 않습니다.'
+      } finally {
+        emailVerifying.value = false
+      }
+    }
+
     return {
       form,
       loading,
@@ -320,6 +399,13 @@ export default {
       onLoginIdInput,
       onNicknameInput,
       submit,
+      sendCode,
+      verifyCode,
+      emailSending,
+      emailVerifying,
+      emailVerified,
+      emailMessage,
+      emailCode,
     }
   },
 }
