@@ -16,6 +16,7 @@ import FollowList from '../views/follow/followList.vue'
 import Help from '../views/Help.vue'
 import { useAuthStore } from '../stores/auth'
 import Login from '../views/users/Login.vue'
+import PasswordReset from '../views/users/PasswordReset.vue'
 import UserProfileView from '../views/users/UserProfileView.vue'
 import ChallengeListView from '../views/challenges/ChallengeListView.vue'
 import TransactionCreateView from '../views/TransactionCreateView.vue'
@@ -26,6 +27,7 @@ const routes = [
   { path: '/', redirect: '/dashboard' },
   { path: '/login', name: 'Login', component: Login },
   { path: '/signup', name: 'Signup', component: Signup },
+  { path: '/password-reset', name: 'PasswordReset', component: PasswordReset },
   { path: '/help', name: 'Help', component: Help },
 
   { path: '/dashboard', name: 'Dashboard', component: Home, meta: { requiresAuth: true } },
