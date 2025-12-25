@@ -19,6 +19,22 @@
 
       <div class="ml-auto flex items-center gap-3 justify-end min-h-[40px]">
         <label class="text-sm text-muted-foreground" for="sort"></label>
+        <div class="flex items-center gap-2">
+          <input
+            v-model="searchTerm"
+            @keyup.enter="onSearch"
+            type="text"
+            placeholder="제목 또는 내용 검색"
+            class="h-9 w-48 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <button
+            type="button"
+            class="h-9 px-3 rounded-md border border-border text-sm hover:bg-accent/60 transition"
+            @click="onSearch"
+          >
+            검색
+          </button>
+        </div>
         <select
           id="sort"
           v-model="selectedSort"
@@ -57,7 +73,13 @@
             <span class="text-muted-foreground">|</span>
             <span>{{ formatDateBrief(post.createdAt) }}</span>
             <span class="text-muted-foreground">|</span>
-            <span>{{ post.author?.nickname || '익명' }}</span>
+            <button
+              type="button"
+              class="text-left underline-offset-2 hover:underline"
+              @click.stop="goProfile(post.author?.userId)"
+            >
+              {{ post.author?.nickname || '익명' }}
+            </button>
           </div>
         </button>
       </div>
@@ -75,7 +97,7 @@
         게시글이 없습니다.
       </div>
 
-      <div ref="sentinel" class="h-8"></div>
+      <div ref="sentinel" class="h-2"></div>
     </div>
   </div>
 </template>
@@ -106,7 +128,7 @@ export default {
     const router = useRouter()
     const route = useRoute()
 
-    const { posts, loading, hasNext } = storeToRefs(boardStore)
+    const { posts, loading, hasNext, keyword: storeKeyword } = storeToRefs(boardStore)
     const { isAuthenticated } = storeToRefs(authStore)
     const userRole = computed(() => authStore.role)
 
@@ -116,6 +138,7 @@ export default {
       { value: 'latest', label: '최신순' },
     ]
     const selectedSort = ref('latest')
+    const searchTerm = ref('')
     const boardTabs = ref([
       { boardId: 5, name: '공지' },
       { boardId: 1, name: '전체' },
@@ -126,6 +149,7 @@ export default {
 
     const sentinel = ref(null)
     let observer = null
+    let suppressSortWatch = false
     const activeBoardId = computed(() => Number(route.params.boardId) || props.boardId)
 
     const loadBoards = async () => {
@@ -156,6 +180,7 @@ export default {
       await boardStore.loadBoardPosts(activeBoardId.value, {
         append: false,
         sort: selectedSort.value,
+        keyword: searchTerm.value.trim(),
       })
     }
 
@@ -164,6 +189,7 @@ export default {
       await boardStore.loadBoardPosts(activeBoardId.value, {
         append: true,
         sort: selectedSort.value,
+        keyword: storeKeyword.value ?? '',
       })
     }
 
@@ -211,16 +237,25 @@ export default {
     watch(
       () => activeBoardId.value,
       async () => {
+        suppressSortWatch = true
         selectedSort.value = 'latest'
+        searchTerm.value = ''
         await loadInitial()
         await setupObserver()
+        suppressSortWatch = false
       }
     )
 
     watch(selectedSort, async () => {
+      if (suppressSortWatch) return
       await loadInitial()
       await setupObserver()
     })
+
+    const onSearch = async () => {
+      await loadInitial()
+      await setupObserver()
+    }
 
     const goBoard = (boardId) => {
       router.push({
@@ -236,6 +271,14 @@ export default {
           boardId: activeBoardId.value,
           postId,
         },
+      })
+    }
+
+    const goProfile = (userId) => {
+      if (!userId) return
+      router.push({
+        name: 'UserProfileParam',
+        params: { userId },
       })
     }
 
@@ -290,6 +333,8 @@ export default {
       loading,
       sortOptions,
       selectedSort,
+      searchTerm,
+      onSearch,
       sentinel,
       goDetail,
       goNewPost,
@@ -299,6 +344,7 @@ export default {
       activeBoardId,
       snippet,
       formatDateBrief,
+      goProfile,
     }
   },
 }

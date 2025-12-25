@@ -124,22 +124,34 @@ const router = createRouter({
 
 let restored = false
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
 
+  // 🔹 최초 진입 시 1회만 실행
   if (!restored) {
     restored = true
-    Promise.resolve(auth.restoreFromRefresh?.() ?? auth.setAuthFromToken())
-      .finally(() => {
-        if (to.meta.requiresAuth && !auth.isAuthenticated) {
-          next({ path: '/login' })
-        } else {
-          next()
-        }
-      })
-    return
+
+    // ✅ 인증이 필요한 페이지에서만 refresh 시도
+    if (to.meta.requiresAuth) {
+      try {
+        await auth.restoreFromRefresh?.()
+      } catch {
+        // refresh 실패(401)는 무시 → 비로그인 상태
+      }
+    } else {
+      // 공개 페이지면 refresh 안 함
+      auth.setAuthFromToken()
+    }
+
+    // 인증 필요 페이지인데 인증 안 됐으면 로그인으로
+    if (to.meta.requiresAuth && !auth.isAuthenticated) {
+      return next({ path: '/login' })
+    }
+
+    return next()
   }
 
+  // 🔹 이후 라우팅
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return next({ path: '/login' })
   }

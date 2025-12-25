@@ -98,11 +98,12 @@
               <span>환불</span>
             </label>
             <button
-              class="px-3 py-2 rounded-md border border-border hover:bg-accent transition"
+              class="px-3 py-2 rounded-md border border-border hover:bg-accent transition disabled:opacity-50 disabled:cursor-not-allowed"
               type="button"
+              :disabled="classifyLoading"
               @click="classifyCategory"
             >
-              카테고리 자동 분류
+              {{ classifyLoading ? '분류 중...' : '카테고리 자동 분류' }}
             </button>
           </div>
 
@@ -145,6 +146,7 @@ export default defineComponent({
   setup() {
     const router = useRouter()
     const loading = ref(false)
+    const classifyLoading = ref(false)
     const error = ref('')
     const success = ref(false)
     const categories = [
@@ -187,7 +189,9 @@ export default defineComponent({
     }
 
     const classifyCategory = async () => {
+      if (classifyLoading.value) return
       error.value = ''
+      classifyLoading.value = true
       try {
         if (!form.merchantName) {
           throw new Error('가맹점을 입력한 뒤 분류를 시도하세요.')
@@ -203,6 +207,8 @@ export default defineComponent({
       } catch (e: any) {
         console.error(e)
         error.value = e?.message || '자동 분류에 실패했습니다.'
+      } finally {
+        classifyLoading.value = false
       }
     }
 
@@ -227,7 +233,18 @@ export default defineComponent({
     const goAnalytics = () => router.push({ name: 'Analytics' })
     const goBack = () => router.back()
 
-    return { form, loading, error, success, submit, goAnalytics, goBack, categories, classifyCategory }
+    return {
+      form,
+      loading,
+      classifyLoading,
+      error,
+      success,
+      submit,
+      goAnalytics,
+      goBack,
+      categories,
+      classifyCategory,
+    }
   },
 })
 </script>

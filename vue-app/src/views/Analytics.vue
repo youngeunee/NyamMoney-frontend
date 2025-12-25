@@ -10,20 +10,26 @@
             <div class="flex items-center gap-2">
               <input
                 v-model="filters.from"
+                @change="enforceDateOrder"
                 type="date"
-                class="border border-border rounded-md p-2 text-sm
-                      bg-background text-foreground
-                      dark:bg-background dark:text-foreground
-                      [color-scheme:dark]"
+                class="w-40 sm:w-48 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
               <span class="text-xs text-muted-foreground">~</span>
               <input
                 v-model="filters.to"
+                @change="enforceDateOrder"
                 type="date"
-                class="border border-border rounded-md p-2 text-sm
-                      bg-background text-foreground
-                      dark:bg-background dark:text-foreground
-                      [color-scheme:dark]"
+                :min="filters.from || undefined"
+                class="w-40 sm:w-48 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+            <div class="flex items-center gap-2">
+              <input
+                v-model="filters.q"
+                @keyup.enter="applyFilters"
+                type="text"
+                placeholder="거래 내역 검색"
+                class="border border-border rounded-md p-2 text-sm bg-background text-foreground dark:bg-background dark:text-foreground"
               />
             </div>
             <button
@@ -232,7 +238,17 @@ export default defineComponent({
     const filters = reactive({
       from: formatDateInput(startOfMonth),
       to: formatDateInput(today),
+      q: '',
     })
+    const enforceDateOrder = () => {
+      if (filters.from && filters.to) {
+        const fromDate = new Date(filters.from)
+        const toDate = new Date(filters.to)
+        if (toDate < fromDate) {
+          filters.to = filters.from
+        }
+      }
+    }
 
     const summary = reactive<Summary>({
       totalExpense: 0,
@@ -326,7 +342,7 @@ export default defineComponent({
     const loadSummary = async () => {
       const from = formatLocalDateTime(new Date(filters.from))
       const to = formatLocalDateTime(new Date(filters.to), true)
-      const res = await fetchTransactionSummary({ from, to })
+      const res = await fetchTransactionSummary({ from, to, q: filters.q?.trim() || undefined })
       summary.totalExpense = res.data?.totalExpense ?? 0
       summary.totalImpulseExpense = res.data?.totalImpulseExpense ?? 0
       summary.totalIncome = res.data?.totalIncome ?? 0
@@ -346,6 +362,7 @@ export default defineComponent({
         from,
         to,
         size: 20,
+        q: filters.q?.trim() || undefined,
       }
       if (!reset && nextCursor.value) {
         params.cursor = nextCursor.value
@@ -417,6 +434,7 @@ export default defineComponent({
     }
 
     onMounted(async () => {
+      enforceDateOrder()
       await applyFilters()
       setupObserver()
     })
@@ -443,6 +461,7 @@ export default defineComponent({
       amountPrefix,
       amountClass,
       goDetail,
+      enforceDateOrder,
     }
   },
 })

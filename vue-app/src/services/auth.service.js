@@ -5,19 +5,39 @@ export function login(body) {
 }
 
 export function logout() {
-  // Authorization 헤더는 axios 인터셉터에서 accessToken으로 자동 첨부
+  // httpOnly 쿠키로 인증
   return api.post('/v1/auth/logout')
 }
 
 /**
- * accessToken 재발급
- * (보통 store나 axios interceptor에서만 사용)
- * @param {string} refreshToken
+ * accessToken 재발급 (store/axios interceptor에서 사용)
  */
-export function refresh(refreshToken) {
-  // refreshToken을 명시하면 헤더로 보내고, 없으면 쿠키 기반으로 요청
-  const config = refreshToken
-    ? { headers: { 'Refresh-Token': refreshToken } }
-    : undefined
-  return api.post('/v1/auth/refresh', null, config)
+export function refresh() {
+  // httpOnly 쿠키 기반이라 별도 헤더 없이 호출
+  return api.post('/v1/auth/refresh')
+}
+
+// 비밀번호 재설정: 인증코드 발송
+export function sendPasswordResetCode(payload) {
+  return api.post('/v1/auth/password/code', payload)
+}
+
+// 비밀번호 재설정: 인증코드 검증
+export function verifyPasswordResetCode(payload) {
+  return api.post('/v1/auth/password/verify', payload)
+}
+
+// 비밀번호 재설정: 새 비밀번호 확정
+export function confirmPasswordReset(payload) {
+  return api.post('/v1/auth/password/confirm', payload)
+}
+
+// 회원가입: 인증코드 발송
+export function sendSignupCode(payload) {
+  return api.post('/v1/auth/signup/code', payload)
+}
+
+// 회원가입: 인증코드 검증
+export function verifySignupCode(payload) {
+  return api.post('/v1/auth/signup/verify', payload)
 }

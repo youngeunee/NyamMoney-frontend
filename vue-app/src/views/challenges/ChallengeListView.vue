@@ -12,7 +12,23 @@
         챌린지 생성
         </button>
 
-        <div class="ml-auto flex gap-2">
+        <div class="ml-auto flex gap-2 items-center">
+          <div class="flex items-center gap-2">
+            <input
+              v-model="searchTerm"
+              @keyup.enter="onSearch"
+              type="text"
+              placeholder="제목 또는 내용 검색"
+              class="h-9 w-48 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <button
+              @click="onSearch"
+              type="button"
+              class="h-9 px-3 rounded-md border border-border text-sm hover:bg-accent/60 transition"
+            >
+              검색
+            </button>
+          </div>
           <button
             @click="toggleActiveOnly"
             :class="[
@@ -36,6 +52,18 @@
             type="button"
           >
             대기
+          </button>
+          <button
+            @click="toggleEndedOnly"
+            :class="[
+              'px-3 py-1.5 text-sm rounded-md border border-border transition-colors hover:bg-accent',
+              showEndedOnly
+                ? 'bg-primary text-primary-foreground border-primary hover:bg-primary'
+                : 'bg-card text-foreground'
+            ]"
+            type="button"
+          >
+            종료
           </button>
         </div>
       </div>
@@ -76,7 +104,7 @@
           </p>
 
           <div class="space-y-1 text-sm text-muted-foreground">
-            <p>기간 {{ c.startDate }} ~ {{ c.endDate }}</p>
+            <p>{{ formatDateYMD(c.startDate) }} ~ {{ formatDateYMD(c.endDate) }}</p>
             <p>참여자 {{ c.participantCount ?? 0 }}명</p>
           </div>
         </div>
@@ -103,10 +131,20 @@ export default {
     const { challenges, loading } = storeToRefs(challengeStore)
     const showActiveOnly = ref(false)
     const showUpcomingOnly = ref(false)
+    const showEndedOnly = ref(false)
+    const searchTerm = ref('')
     const page = ref(0)
     const size = ref(12)
     const sentinel = ref(null)
     let observer = null
+
+    const formatDateYMD = (value) => {
+      if (!value) return '?'
+      const d = new Date(value)
+      if (Number.isNaN(d.getTime())) return '?'
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    }
 
     const statusStyleMap = {
       UPCOMING: { label: '대기' },
@@ -116,19 +154,25 @@ export default {
     }
 
     const filteredChallenges = computed(() => {
-      // 둘 다 켜지면 ACTIVE, UPCOMING 모두 허용
-      if (showActiveOnly.value && showUpcomingOnly.value) {
-        return challenges.value.filter((c) =>
-          c.status === 'ACTIVE' || c.status === 'UPCOMING'
-        )
+      const keyword = searchTerm.value.trim().toLowerCase()
+      const allowedStatuses = new Set()
+      if (showActiveOnly.value) allowedStatuses.add('ACTIVE')
+      if (showUpcomingOnly.value) allowedStatuses.add('UPCOMING')
+      if (showEndedOnly.value) {
+        allowedStatuses.add('ENDED')
+        allowedStatuses.add('CLOSED')
       }
-      if (showActiveOnly.value) {
-        return challenges.value.filter((c) => c.status === 'ACTIVE')
-      }
-      if (showUpcomingOnly.value) {
-        return challenges.value.filter((c) => c.status === 'UPCOMING')
-      }
-      return challenges.value
+
+      const statusFiltered = allowedStatuses.size
+        ? challenges.value.filter((c) => allowedStatuses.has(c.status))
+        : challenges.value
+
+      if (!keyword) return statusFiltered
+      return statusFiltered.filter((c) => {
+        const title = (c.title || '').toLowerCase()
+        const desc = (c.description || '').toLowerCase()
+        return title.includes(keyword) || desc.includes(keyword)
+      })
     })
 
     const visibleChallenges = computed(() =>
@@ -136,11 +180,10 @@ export default {
     )
 
     const loadInitial = async () => {
-      if (!challenges.value.length) {
-        await challengeStore.loadChallenges()
-      }
+      await challengeStore.loadChallenges()
       page.value = 0
       await nextTick()
+      tryLoadMoreIfVisible()
     }
 
     const loadMore = () => {
@@ -203,6 +246,18 @@ export default {
       tryLoadMoreIfVisible()
     })
 
+    watch(showEndedOnly, async () => {
+      page.value = 0
+      await nextTick()
+      tryLoadMoreIfVisible()
+    })
+
+    watch(searchTerm, async () => {
+      page.value = 0
+      await nextTick()
+      tryLoadMoreIfVisible()
+    })
+
     watch(
       () => loading.value,
       (isLoading) => {
@@ -229,6 +284,15 @@ export default {
     const toggleUpcomingOnly = () => {
       showUpcomingOnly.value = !showUpcomingOnly.value
     }
+    const toggleEndedOnly = () => {
+      showEndedOnly.value = !showEndedOnly.value
+    }
+
+    const onSearch = () => {
+      searchTerm.value = searchTerm.value.trim()
+      page.value = 0
+      tryLoadMoreIfVisible()
+    }
 
     return {
       loading,
@@ -238,9 +302,14 @@ export default {
       visibleChallenges,
       toggleActiveOnly,
       toggleUpcomingOnly,
+      toggleEndedOnly,
       showActiveOnly,
       showUpcomingOnly,
+      showEndedOnly,
+      searchTerm,
+      onSearch,
       sentinel,
+      formatDateYMD,
     }
   },
 }

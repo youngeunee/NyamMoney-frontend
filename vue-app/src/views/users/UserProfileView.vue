@@ -5,36 +5,37 @@
       <div class="max-w-6xl mx-auto space-y-8">
 
         <!-- ✅ 데스크톱: 2열 + 2행 / 모바일: 자동 세로 -->
-        <div class="grid gap-8 lg:grid-cols-[320px_1fr] lg:grid-rows-[auto_1fr] lg:items-stretch">
+        <div class="space-y-8">
 
-          <!-- -------------------- LEFT / TOP (프로필 + 통계 + 소개) -------------------- -->
-          <div class="space-y-4 order-1 lg:col-start-1 lg:row-start-1">
-            <UiCard wrapperClass="border border-border bg-white shadow-sm">
-              <div class="flex flex-col items-center md:items-start gap-3 text-center md:text-left">
-                <UiAvatar
-                  :src="profile.avatarUrl"
-                  :alt="profile.nickname"
-                  :name="profile.nickname"
-                  size="lg"
-                  className="border-2 border-border"
-                />
-                <div>
-                  <p class="text-sm text-gray-500">@{{ profile.userId }}</p>
-                  <h1 class="text-2xl font-bold leading-tight">{{ profile.nickname }}</h1>
-                </div>
+          <!-- 프로필 + 통계 1행 -->
+          <div class="flex flex-col lg:flex-row gap-4 items-stretch">
+            <div class="flex-1 min-w-0">
+              <UiCard wrapperClass="border border-border bg-white shadow-sm">
+                <div class="flex flex-col items-center md:items-start gap-3 text-center md:text-left">
+                  <UiAvatar
+                    :src="profile.avatarUrl"
+                    :alt="profile.nickname"
+                    :name="profile.nickname"
+                    size="lg"
+                    className="border-2 border-border"
+                  />
+                  <div>
+                    <p class="text-sm text-gray-500">@{{ profile.userId }}</p>
+                    <h1 class="text-2xl font-bold leading-tight">{{ profile.nickname }}</h1>
+                  </div>
 
-                <div class="flex flex-col md:flex-row w-full gap-2 mt-2">
-                  <template v-if="isMyProfile">
-                    <UiButton
-                      class="w-full md:w-auto bg-white text-gray-700 border border-border"
-                      variant="outline"
-                      @click="goEdit"
-                    >
-                      내 정보 수정
-                    </UiButton>
-                  </template>
+                  <div class="flex flex-col md:flex-row w-full gap-2 mt-2">
+                    <template v-if="isMyProfile">
+                      <UiButton
+                        class="w-full md:w-auto bg-white text-gray-700 border border-border"
+                        variant="outline"
+                        @click="goEdit"
+                      >
+                        내 정보 수정
+                      </UiButton>
+                    </template>
 
-                  <template v-else>
+                    <template v-else>
                     <UiButton
                       class="w-full md:w-auto"
                       :variant="followButtonVariant"
@@ -49,181 +50,42 @@
                       variant="outline"
                       :disabled="loadingBlock"
                       @click="toggleBlock"
-                    >
-                      {{ profile.isBlocked ? '차단 해제' : '차단' }}
-                    </UiButton>
-                  </template>
-                </div>
-              </div>
-            </UiCard>
-
-            <UiCard wrapperClass="border border-border bg-white shadow-sm">
-              <div class="space-y-3">
-                <p class="text-sm font-semibold text-gray-600">활동 통계</p>
-                <div class="grid grid-cols-3 gap-2 text-center">
-                  <div v-for="stat in stats" :key="stat.label" class="rounded-md bg-gray-50 py-3">
-                    <p class="text-xl font-bold">{{ stat.value }}</p>
-                    <p class="text-xs text-gray-500">{{ stat.label }}</p>
-                  </div>
-                </div>
-              </div>
-            </UiCard>
-          </div>
-
-          <!-- -------------------- RIGHT (Posts) : 데스크톱에서 2행 span -------------------- -->
-          <div class="space-y-6 order-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:row-span-2 lg:h-full lg:min-h-0">
-            <div class="flex flex-col gap-2">
-              <h2 class="text-2xl font-bold">Posts</h2>
-              <div class="flex items-center justify-between gap-4 flex-wrap">
-                <div class="flex items-center gap-2">
-                  <button
-                    v-for="tab in mainTabs"
-                    :key="tab.key"
-                    @click="switchMainTab(tab.key)"
-                    :class="[
-                      'px-4 py-1.5 rounded-full text-sm border transition-colors',
-                      activeMainTab === tab.key
-                        ? 'bg-orange-500 text-white border-orange-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    ]"
-                    type="button"
-                  >
-                    {{ tab.label }}
-                  </button>
-                </div>
-
-              </div>
-            </div>
-
-            <div class="space-y-4">
-              <div class="flex items-center justify-between gap-3 flex-wrap">
-                <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="tab in boardTabs"
-                  :key="tab.key"
-                  @click="switchBoard(tab.key)"
-                  :class="[
-                    'px-3 py-1 rounded-full text-sm border transition-colors',
-                    activeBoard === tab.key
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-white text-gray-600 border-border hover:bg-gray-50'
-                  ]"
-                  type="button"
-                >
-                  {{ tab.label }}
-                </button>
-              </div>
-                <span class="inline-flex items-center px-3 py-1 rounded-full bg-white border border-border text-sm shadow-sm">
-                  총 {{ activeMainTab === 'commented' ? totalCommented : totalPosts }}개
-                </span>
-              </div>
-
-              <div class="border border-border bg-white rounded-lg shadow-sm h-full lg:min-h-0 flex flex-col">
-                <div class="p-4 flex items-center justify-between">
-                  <p class="text-sm text-gray-500">
-                    {{ activeBoard === 'all' ? '전체' : boardTabs.find(t => t.key === activeBoard)?.label }} 게시글
-                  </p>
-                </div>
-
-                <div
-                  ref="postsScrollRoot"
-                  class="max-h-[520px] lg:max-h-[640px] overflow-y-auto px-4 pb-4 space-y-3"
-                >
-                  <UiCard
-                    v-for="post in visibleItems"
-                    :key="post.id"
-                    wrapperClass="border border-border bg-white shadow-sm cursor-pointer"
-                    @click="goPostDetail(post)"
-                  >
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between text-sm text-gray-500">
-                        <div class="flex items-center gap-2">
-                          <span class="px-2 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-semibold">
-                            {{ post.boardName }}
-                          </span>
-                          <span>{{ post.date }}</span>
-                        </div>
-                        <div class="flex items-center gap-4 text-xs">
-                          <span>좋아요 {{ post.likes }}</span>
-                          <span>댓글 {{ post.comments }}</span>
-                        </div>
-                      </div>
-
-                      <h3 class="font-semibold text-lg text-gray-900 line-clamp-1">
-                        {{ post.title || '제목 없는 글' }}
-                      </h3>
-                      <p class="text-sm text-gray-600 leading-relaxed line-clamp-2">
-                        {{ post.excerpt }}
-                      </p>
-                    </div>
-                  </UiCard>
-
-                  <UiCard v-if="loadingPosts" wrapperClass="border border-dashed border-border bg-white">
-                    <div class="text-center text-gray-500 py-6">불러오는 중...</div>
-                  </UiCard>
-
-                  <UiCard v-else-if="!filteredPosts.length" wrapperClass="border border-dashed border-border bg-white">
-                    <div class="text-center text-gray-500 py-6">이 카테고리에 게시글이 없습니다.</div>
-                  </UiCard>
-
-                  <div ref="sentinel" class="h-8"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 내가 참여한 챌린지: Posts 아래로 이동 -->
-            <div class="space-y-3">
-              <div>
-                <h2 class="text-2xl font-bold">Challenge</h2>
-              </div>
-              <UiCard wrapperClass="border border-border bg-white shadow-sm">
-                <div class="space-y-3">
-                  <div v-if="!myChallenges.length" class="text-sm text-gray-500">
-                    참여 중인 챌린지가 없습니다.
-                  </div>
-
-                  <div v-else class="space-y-2">
-                    <div
-                      v-for="c in myChallenges"
-                      :key="c.challengeId"
-                      class="flex items-center justify-between p-3 rounded-lg border border-border bg-gray-50"
-                    >
-                      <div class="space-y-1">
-                        <p class="text-sm font-medium">{{ c.title }}</p>
-                        <div class="flex items-center gap-2">
-                          <span
-                            class="px-2 py-0.5 text-xs rounded-full"
-                            :class="statusStyleMap[c.status]?.badge"
-                          >
-                            {{ statusStyleMap[c.status]?.label }}
-                          </span>
-
-                          <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">
-                            참여 중
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        class="text-xs text-primary hover:underline"
-                        @click="goChallengeDetail(c.challengeId)"
                       >
-                        보기 →
-                      </button>
-                    </div>
+                        {{ profile.isBlocked ? '차단 해제' : '차단' }}
+                      </UiButton>
+                    </template>
+                  </div>
+                </div>
+              </UiCard>
+            </div>
+
+            <div class="flex-1 min-w-[260px]">
+              <UiCard
+                wrapperClass="border border-border bg-white shadow-sm h-full min-h-[150px] flex flex-col"
+                bodyClass="px-4 py-3 flex-1 flex items-center justify-center"
+              >
+                <template #header>
+                  <div class="px-4 pt-4">
+                    <h2 class="text-2xl font-bold">내 활동</h2>
+                  </div>
+                </template>
+                  <div class="flex justify-center items-center gap-3 w-full max-w-lg mx-auto flex-nowrap">
+                    <div
+                      v-for="stat in stats"
+                      :key="stat.label"
+                      class="rounded-md bg-gray-50 py-3 px-4 w-[110px] flex-none flex flex-col items-center justify-center"
+                    >
+                    <p class="text-lg font-bold">{{ stat.value }}</p>
+                    <p class="text-xs text-gray-500">{{ stat.label }}</p>
                   </div>
                 </div>
               </UiCard>
             </div>
           </div>
 
-          
-          
-          <!-- -------------------- LEFT / BOTTOM (예산 사용률) -------------------- -->
           <UiCard
             v-if="showBudgetUsage"
-            wrapperClass="order-2 border border-border bg-white shadow-sm"
-            class="lg:col-start-1 lg:row-start-2"
+            wrapperClass="border border-border bg-white shadow-sm"
           >
             <template #header>
               <div class="px-4 pt-4 flex items-center justify-between">
@@ -237,51 +99,53 @@
               </div>
             </template>
 
-            <div v-if="!summaryLoading" class="p-4 space-y-6">
-              <div class="space-y-3">
-                <p class="text-sm font-semibold text-foreground text-center">냠 비용 비율</p>
-                <div class="flex items-center justify-center gap-4">
-                  <div class="relative inline-block donut-wrapper">
-                    <svg viewBox="0 0 36 36" class="h-44 w-44">
-                      <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
-                      <circle
-                        cx="18" cy="18" r="15"
-                        fill="none"
-                        stroke="#fed253"
-                        stroke-width="6"
-                        stroke-linecap="butt"
-                        :stroke-dasharray="`${impulseUsageCap} ${100 - impulseUsageCap}`"
-                        stroke-dashoffset="25"
-                      />
-                      <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
-                      <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="6" font-weight="700" dominant-baseline="middle">
-                        {{ Math.round(impulseUsage) }}%
-                      </text>
-                    </svg>
+            <div v-if="!summaryLoading" class="p-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                  <p class="text-sm font-semibold text-foreground text-center">냠 비용 비율</p>
+                  <div class="flex items-center justify-center gap-4">
+                    <div class="relative inline-block donut-wrapper">
+                      <svg viewBox="0 0 36 36" class="h-44 w-44">
+                        <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
+                        <circle
+                          cx="18" cy="18" r="15"
+                          fill="none"
+                          stroke="#fed253"
+                          stroke-width="6"
+                          stroke-linecap="butt"
+                          :stroke-dasharray="`${impulseUsageCap} ${100 - impulseUsageCap}`"
+                          stroke-dashoffset="25"
+                        />
+                        <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
+                        <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="6" font-weight="700" dominant-baseline="middle">
+                          {{ Math.round(impulseUsage) }}%
+                        </text>
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="space-y-3">
-                <p class="text-sm font-semibold text-foreground text-center">예산 사용률</p>
-                <div class="flex items-center justify-center gap-4">
-                  <div class="relative inline-block donut-wrapper">
-                    <svg viewBox="0 0 36 36" class="h-44 w-44">
-                      <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
-                      <circle
-                        cx="18" cy="18" r="15"
-                        fill="none"
-                        stroke="#fed253"
-                        stroke-width="6"
-                        stroke-linecap="butt"
-                        :stroke-dasharray="`${expenseUsageCap} ${100 - expenseUsageCap}`"
-                        stroke-dashoffset="25"
-                      />
-                      <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
-                      <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="6" font-weight="700" dominant-baseline="middle">
-                        {{ Math.round(expenseUsage) }}%
-                      </text>
-                    </svg>
+                <div class="space-y-3">
+                  <p class="text-sm font-semibold text-foreground text-center">예산 사용률</p>
+                  <div class="flex items-center justify-center gap-4">
+                    <div class="relative inline-block donut-wrapper">
+                      <svg viewBox="0 0 36 36" class="h-44 w-44">
+                        <circle cx="18" cy="18" r="15" fill="hsl(var(--card))" stroke="hsl(var(--muted))" stroke-width="6" />
+                        <circle
+                          cx="18" cy="18" r="15"
+                          fill="none"
+                          stroke="#fed253"
+                          stroke-width="6"
+                          stroke-linecap="butt"
+                          :stroke-dasharray="`${expenseUsageCap} ${100 - expenseUsageCap}`"
+                          stroke-dashoffset="25"
+                        />
+                        <circle cx="18" cy="18" r="10" fill="hsl(var(--card))" />
+                        <text x="18" y="19" text-anchor="middle" class="fill-current text-foreground" font-size="6" font-weight="700" dominant-baseline="middle">
+                          {{ Math.round(expenseUsage) }}%
+                        </text>
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -292,7 +156,143 @@
             </div>
           </UiCard>
 
+          <div class="space-y-6">
+            <div class="border border-border bg-white rounded-lg shadow-sm flex flex-col">
+              <div class="p-4 space-y-3">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                  <h2 class="text-2xl font-bold">게시글</h2>
+                </div>
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <button
+                      v-for="tab in mainTabs"
+                      :key="tab.key"
+                      @click="switchMainTab(tab.key)"
+                      :class="[
+                        'px-4 py-1.5 rounded-full text-sm border transition-colors',
+                        activeMainTab === tab.key
+                          ? 'bg-yellow-400 text-gray-900 border-yellow-400'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      ]"
+                      type="button"
+                    >
+                      {{ tab.label }}
+                    </button>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <template v-for="(tab, idx) in boardTabs" :key="tab.key">
+                      <span v-if="idx > 0" class="text-muted-foreground">|</span>
+                      <button
+                        @click="switchBoard(tab.key)"
+                        :class="[
+                          'px-3 py-1.5 rounded-md text-sm transition-colors',
+                          activeBoard === tab.key
+                            ? 'text-primary font-semibold'
+                            : 'text-foreground hover:text-primary'
+                        ]"
+                        type="button"
+                      >
+                        {{ tab.label }}
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+              <div
+                ref="postsScrollRoot"
+                class="max-h-[520px] lg:max-h-[640px] overflow-y-auto px-4 pb-4 space-y-3"
+              >
+                <div v-if="visibleItems.length" class="border border-border rounded-md bg-white divide-y divide-border shadow-sm">
+                  <button
+                    v-for="post in visibleItems"
+                    :key="post.id"
+                    class="w-full text-left px-4 py-3 flex flex-col gap-2 hover:bg-accent/60 transition"
+                    type="button"
+                    @click="goPostDetail(post)"
+                  >
+                    <h3 class="font-semibold text-foreground line-clamp-1">
+                      {{ post.title || '제목 없는 글' }}
+                    </h3>
+                    <p class="text-sm text-muted-foreground line-clamp-2">
+                      {{ post.excerpt || '내용이 없습니다.' }}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span>{{ post.boardName || '게시판' }}</span>
+                      <span class="text-muted-foreground">|</span>
+                      <span>댓글 {{ post.comments }}</span>
+                      <span class="text-muted-foreground">|</span>
+                      <span>좋아요 {{ post.likes }}</span>
+                      <span class="text-muted-foreground">|</span>
+                      <span>{{ formatDateBrief(post.date) }}</span>
 
+                    </div>
+                  </button>
+                </div>
+
+                <div v-if="loadingPosts" class="border border-dashed border-border bg-white rounded-md shadow-sm">
+                  <div class="text-center text-gray-500 py-6">불러오는 중...</div>
+                </div>
+
+                <div v-else-if="!filteredPosts.length" class="border border-dashed border-border bg-white rounded-md shadow-sm">
+                  <div class="text-center text-gray-500 py-6">작성한 게시글이 없습니다.</div>
+                </div>
+                <div ref="sentinel" class="h-2"></div>
+              </div>
+            </div>
+
+            <!-- 내가 참여한 챌린지: Posts 아래로 이동 -->
+            <div class="space-y-3">
+              <div class="border border-border bg-white rounded-lg shadow-sm flex flex-col">
+                <div class="px-4 pt-4 pb-2">
+                  <h2 class="text-2xl font-bold">챌린지</h2>
+                </div>
+
+                <div class="px-4 pb-4 space-y-3">
+                  <div v-if="!sortedMyChallenges.length" class="text-sm text-gray-500">
+                    참여 중인 챌린지가 없습니다.
+                  </div>
+
+                  <div v-else class="border border-border rounded-md bg-white divide-y divide-border shadow-sm overflow-hidden">
+                    <button
+                      v-for="c in sortedMyChallenges"
+                      :key="c.challengeId"
+                      class="w-full text-left px-4 py-3 flex flex-col gap-2 hover:bg-accent/60 transition"
+                      type="button"
+                      @click="goChallengeDetail(c.challengeId)"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-muted text-foreground">
+                          {{ statusStyleMap[c.status]?.label || '진행 상태' }}
+                        </span>
+                      </div>
+
+                      <h3 class="font-semibold text-foreground line-clamp-2">
+                        {{ c.title || '제목 없음' }}
+                      </h3>
+                      <p v-if="c.description" class="text-sm text-muted-foreground line-clamp-2">
+                        {{ c.description }}
+                      </p>
+
+                      <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        <span v-if="c.startDate || c.endDate">
+                          {{ formatDateYMD(c.startDate) }} ~ {{ formatDateYMD(c.endDate) }}
+                        </span>
+                        <span
+                          v-if="(c.startDate || c.endDate) && c.participantCount !== undefined"
+                          class="text-muted-foreground"
+                        >
+                          |
+                        </span>
+                        <span v-if="c.participantCount !== undefined">
+                          참여자 {{ c.participantCount }}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
         </div>
       </div>
@@ -332,25 +332,59 @@ import { fetchTransactionDailySummary } from '@/services/transaction.service'
 import { useChallengeStore } from '@/stores/challenge.store'
 const challengeStore = useChallengeStore()
 const { challenges } = storeToRefs(challengeStore)
-const myChallenges = computed(() =>
-  challenges.value.filter((c) => c.joined)
-)
+const toTimestamp = (value) => {
+  if (!value) return null
+  const t = new Date(value).getTime()
+  return Number.isFinite(t) ? t : null
+}
+
+const myChallenges = computed(() => challenges.value.filter((c) => c.joined))
+
+const sortedMyChallenges = computed(() => {
+  const copy = [...myChallenges.value]
+  const statusGroup = (status) => {
+    const s = String(status || '').toUpperCase()
+    if (s === 'ACTIVE') return 0
+    if (s === 'UPCOMING') return 1
+    if (s === 'ENDED' || s === 'CLOSED') return 2
+    return 3
+  }
+
+  return copy.sort((a, b) => {
+    const ag = statusGroup(a.status)
+    const bg = statusGroup(b.status)
+    if (ag !== bg) return ag - bg
+
+    const aStart = toTimestamp(a.startDate) ?? Infinity
+    const bStart = toTimestamp(b.startDate) ?? Infinity
+    const aEnd = toTimestamp(a.endDate) ?? -Infinity
+    const bEnd = toTimestamp(b.endDate) ?? -Infinity
+
+    if (ag === 0 || ag === 1) {
+      return aStart - bStart
+    }
+    if (ag === 2) {
+      return bEnd - aEnd
+    }
+    return 0
+  })
+})
 const statusStyleMap = {
   UPCOMING: {
     badge: 'bg-blue-100 text-blue-700',
-    label: '곧 시작',
+    label: '대기',
   },
   ACTIVE: {
     badge: 'bg-green-100 text-green-700',
-    label: '진행 중',
+    label: '진행',
   },
   ENDED: {
     badge: 'bg-gray-100 text-gray-500',
-    label: '종료됨',
+    label: '종료',
   },
   CLOSED: {
     badge: 'bg-gray-100 text-gray-500',
-    label: '취소됨',
+    label: '취소',
   },
 }
 const goChallengeDetail = (challengeId) => {
@@ -392,7 +426,6 @@ const isMyProfile = computed(() => {
   if (!profile.userId || !myUserId.value) return false
   return String(profile.userId) === String(myUserId.value)
 })
-
 const followButtonLabel = computed(() => {
   if (profile.isBlocked) return '차단됨'
   if (profile.followStatus === 'PENDING') return '신청 중'
@@ -644,8 +677,8 @@ const boards = ref([])
 const loadingPosts = ref(false)
 
 const mainTabs = [
-  { key: 'posts', label: '최근 게시글' },
-  { key: 'commented', label: '내가 댓글 단 글' },
+  { key: 'posts', label: '내가 쓴 글' },
+  { key: 'commented', label: '댓글 단 글' },
 ]
 const boardTabs = computed(() => [
   { key: 'all', label: '전체' },
@@ -728,6 +761,35 @@ const formatLocalDateTime = (date) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
     date.getHours(),
   )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+const formatDateBrief = (value) => {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin >= 0 && diffMin < 60) {
+    return `${diffMin}분 전`
+  }
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  const pad = (n) => String(n).padStart(2, '0')
+  if (sameDay) {
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`
+}
+
+const formatDateYMD = (value) => {
+  if (!value) return '?'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '?'
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 

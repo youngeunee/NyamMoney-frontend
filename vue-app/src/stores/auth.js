@@ -1,11 +1,7 @@
 import { defineStore } from 'pinia'
-import { login as loginApi, logout as logoutApi } from '@/services/auth.service'
-import { refresh as refreshApi } from '@/services/auth.service'
+import { login as loginApi, logout as logoutApi, refresh as refreshApi } from '@/services/auth.service'
 
-const ACCESS_TOKEN_KEY = 'auth.accessToken'
-const REFRESH_TOKEN_KEY = 'auth.refreshToken'
-
-// base64url -> base64 디코드
+// base64url -> base64 디코딩
 function decodeJwtPayload(token) {
   try {
     const base64Url = token.split('.')[1]
@@ -27,21 +23,16 @@ function decodeJwtPayload(token) {
   }
 }
 
-function isExpired(payload, skewSeconds = 10) {
-  if (!payload?.exp) return false
-  const now = Math.floor(Date.now() / 1000)
-  return payload.exp <= now + skewSeconds
-}
-
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     userId: null,
     loginId: null,
     nickname: null,
     role: null,
+    name: null,
     isAuthenticated: false,
     loading: false,
-    accessToken: null,
+    accessToken: null, // 메모리 캐시 용도(헤더 전송X)
     refreshToken: null,
   }),
 
@@ -56,29 +47,21 @@ export const useAuthStore = defineStore('auth', {
     setTokens(accessToken, refreshToken) {
       this.accessToken = accessToken ?? null
       this.refreshToken = refreshToken ?? null
-
-      if (accessToken) localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
-      else localStorage.removeItem(ACCESS_TOKEN_KEY)
-
-      if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
-      else localStorage.removeItem(REFRESH_TOKEN_KEY)
     },
 
-    // 서버 세션(레디스) 건드리지 않는 로컬 리셋
+    // 서버 세션 상태 초기화
     $resetAuth() {
       this.userId = null
       this.loginId = null
       this.nickname = null
+      this.role = null
+      this.name = null
       this.isAuthenticated = false
       this.loading = false
-      this.role = null
       this.accessToken = null
       this.refreshToken = null
-      localStorage.removeItem(ACCESS_TOKEN_KEY)
-      localStorage.removeItem(REFRESH_TOKEN_KEY)
     },
 
-    // accessToken 기반으로 사용자 상태 복원 (디코드 실패 시 서버 logout 호출 금지)
     setAuthFromToken() {
       const token = this.accessToken
       if (!token) {
@@ -99,42 +82,14 @@ export const useAuthStore = defineStore('auth', {
       this.isAuthenticated = true
     },
 
-    // 앱 시작 시 1회 호출: localStorage + (필요 시) refresh
+    // 앱 시작 시 쿠키 기반 refresh 요청으로 복구
     async restoreFromRefresh() {
-      if (!this.accessToken) {
-        const storedAccess = localStorage.getItem(ACCESS_TOKEN_KEY)
-        if (storedAccess) this.accessToken = storedAccess
-      }
-      if (!this.refreshToken) {
-        const storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY)
-        if (storedRefresh) this.refreshToken = storedRefresh
-      }
-
-      // accessToken이 있고, 디코드 가능 + 만료 아님 => 바로 복구
-      if (this.accessToken) {
-        const payload = decodeJwtPayload(this.accessToken)
-        if (payload && !isExpired(payload)) {
-          this.setAuthFromToken()
-          return
-        }
-        // 만료/디코드 실패면 access 제거하고 refresh로 진행
-        this.accessToken = null
-        localStorage.removeItem(ACCESS_TOKEN_KEY)
-      }
-
-      // refreshToken도 없으면 복구 불가
-      if (!this.refreshToken) {
-        this.$resetAuth()
-        return
-      }
-
-      // refresh 시도
       try {
-        const res = await refreshApi(this.refreshToken)
+        const res = await refreshApi()
         const data = res.data
 
         const newAccess = data?.accessToken
-        const newRefresh = data?.refreshToken ?? this.refreshToken
+        const newRefresh = data?.refreshToken ?? null
 
         if (!newAccess) {
           this.$resetAuth()
@@ -142,7 +97,17 @@ export const useAuthStore = defineStore('auth', {
         }
 
         this.setTokens(newAccess, newRefresh)
-        this.setAuthFromToken()
+
+        if (data?.userId) {
+          this.userId = data.userId
+          this.loginId = data.loginId
+          this.nickname = data.nickname
+          this.role = data.role
+          this.name = data.name
+          this.isAuthenticated = true
+        } else {
+          this.setAuthFromToken()
+        }
       } catch (e) {
         this.$resetAuth()
       }
@@ -158,6 +123,7 @@ export const useAuthStore = defineStore('auth', {
         this.loginId = data.loginId
         this.nickname = data.nickname
         this.role = data.role
+        this.name = data.name
         this.isAuthenticated = true
 
         this.setTokens(data.accessToken, data.refreshToken)
@@ -166,18 +132,18 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // “사용자 클릭 로그아웃”에서만 서버 logout 호출
+    // 서버 로그아웃 + 로컬 상태 정리
     async logout() {
       try {
         await logoutApi()
       } catch (e) {
         console.warn('Server logout failed – ignored.')
       }
-      this.setTokens(null, null)
-      this.$resetAuth()
+      this.forceLogoutLocalOnly()
+      window.location.replace('/')
     },
 
-    // 401/복구 실패 시 강제 로그아웃용 (서버 세션 삭제하지 않음)
+    // 401/refresh 실패 시 강제 로그아웃
     forceLogoutLocalOnly() {
       this.setTokens(null, null)
       this.$resetAuth()

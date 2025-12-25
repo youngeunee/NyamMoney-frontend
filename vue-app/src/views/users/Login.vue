@@ -1,20 +1,19 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
-    <div class="w-full max-w-md shadow-xl border-2 bg-card rounded-lg">
+    <div class="w-full max-w-md border border-border bg-white rounded-lg">
       <!-- 상단 인트로 -->
       <div class="text-center space-y-4 py-6">
         <div class="flex justify-center">
-          <div class="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg">
+          <div class="w-20 h-20 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
             <span class="text-4xl">🐱</span>
           </div>
         </div>
-        <div class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <div class="text-3xl font-bold text-foreground">
           YumMoney
         </div>
-        <div class="text-base text-muted-foreground">
-          다시 오신 걸 환영해요!  
-          오늘도 소비를 잘 기록해볼까요?
-        </div>
+        <!-- <div class="text-base text-muted-foreground">
+          현명한 소비생활
+        </div> -->
       </div>
 
       <!-- 로그인 폼 -->
@@ -57,7 +56,7 @@
           </label>
 
           <router-link
-            to="#"
+            to="/password-reset"
             class="text-sm text-primary hover:text-primary/80 font-medium"
           >
             비밀번호를 잊으셨나요?
@@ -71,13 +70,13 @@
 
         <!-- 버튼 / 회원가입 링크 -->
         <div class="flex flex-col space-y-4 pt-4">
-          <button
+          <UiButton
             type="submit"
-            class="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-shadow bg-primary text-primary-foreground rounded"
+            class="w-full h-11 text-base font-semibold"
             :disabled="loading"
           >
             {{ loading ? '로그인 중...' : '로그인' }}
-          </button>
+          </UiButton>
           <div class="text-center text-sm text-muted-foreground">
             아직 계정이 없으신가요?
             <router-link
@@ -97,9 +96,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import UiButton from '@/components/ui/Button.vue'
 
 export default {
   name: 'LoginView',
+  components: { UiButton },
 
   setup() {
     const router = useRouter()

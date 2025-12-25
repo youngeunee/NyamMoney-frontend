@@ -1,23 +1,23 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4 py-8">
-    <div class="w-full max-w-2xl shadow-xl border-2 bg-card rounded-lg">
+    <div class="w-full max-w-2xl border border-border bg-white rounded-lg">
       <div class="text-center space-y-4 py-6">
         <div class="flex justify-center">
-          <div class="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg">
+          <div class="w-20 h-20 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
             <span class="text-3xl">🐱</span>
           </div>
         </div>
-        <div class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Join YumMoney</div>
-        <div class="text-base text-muted-foreground">Create your account and start managing your finances with ease</div>
+        <div class="text-3xl font-bold text-foreground">회원가입</div>
+        <div class="text-base text-muted-foreground">냠 머니에 가입해 소비 습관을 확인해보세요!</div>
       </div>
 
       <form @submit.prevent="submit" class="space-y-5 px-8 pb-8">
         <!-- loginId / nickname -->
         <div class="grid md:grid-cols-2 gap-4">
           <div class="space-y-2">
-            <label class="text-sm font-medium" for="loginId">Login ID *</label>
+            <label class="text-sm font-medium" for="loginId">아이디 *</label>
             <input id="loginId" v-model="form.loginId" @input="onLoginIdInput" type="text" required
-              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Choose a login ID" />
+              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="아이디를 입력하세요." />
             <p
               v-if="loginIdCheck.message || loginIdCheck.loading"
               class="text-xs mt-1"
@@ -28,7 +28,7 @@
           </div>
 
           <div class="space-y-2">
-            <label class="text-sm font-medium" for="nickname">Nickname *</label>
+            <label class="text-sm font-medium" for="nickname">닉네임 *</label>
             <input id="nickname" v-model="form.nickname" @input="onNicknameInput" type="text" required
               class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Your display name" />
             <p
@@ -44,12 +44,12 @@
         <!-- ✅ 추가: name / phoneNumber -->
         <div class="grid md:grid-cols-2 gap-4">
           <div class="space-y-2">
-            <label class="text-sm font-medium" for="name">Name *</label>
+            <label class="text-sm font-medium" for="name">이름 *</label>
             <input id="name" v-model="form.name" type="text" required
               class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Your name" />
           </div>
           <div class="space-y-2">
-            <label class="text-sm font-medium" for="phoneNumber">Phone Number *</label>
+            <label class="text-sm font-medium" for="phoneNumber">핸드폰 번호 *</label>
             <input id="phoneNumber" v-model="form.phoneNumber" type="tel" required
               class="h-11 w-full border border-border rounded px-2 py-1" placeholder="01012345678" />
           </div>
@@ -57,20 +57,59 @@
 
         <!-- email -->
         <div class="space-y-2">
-          <label class="text-sm font-medium" for="email">Email Address *</label>
-          <input id="email" v-model="form.email" type="email" required
-            class="h-11 w-full border border-border rounded px-2 py-1" placeholder="your@email.com" />
+          <label class="text-sm font-medium" for="email">이메일 *</label>
+          <div class="flex gap-2">
+            <input
+              id="email"
+              v-model="form.email"
+              type="email"
+              required
+              class="h-11 w-full border border-border rounded px-2 py-1"
+              placeholder="your@email.com"
+              :disabled="emailVerified"
+            />
+            <UiButton
+              type="button"
+              variant="outline"
+              class="h-11 whitespace-nowrap"
+              :disabled="emailSending || !form.email"
+              @click="sendCode"
+            >
+              {{ emailVerified ? '인증완료' : emailSending ? '전송 중...' : '인증요청' }}
+            </UiButton>
+          </div>
+          <div class="flex gap-2 items-center">
+            <input
+              v-model="emailCode"
+              type="text"
+              class="h-11 flex-1 border border-border rounded px-2 py-1"
+              placeholder="인증번호 6자리"
+              :disabled="emailVerified"
+            />
+            <UiButton
+              type="button"
+              variant="secondary"
+              class="h-11 whitespace-nowrap"
+              :disabled="emailVerified || emailVerifying || !emailCode"
+              @click="verifyCode"
+            >
+              {{ emailVerified ? '완료' : emailVerifying ? '확인 중...' : '인증확인' }}
+            </UiButton>
+          </div>
+          <p v-if="emailMessage" :class="['text-xs', emailVerified ? 'text-green-600' : 'text-red-500']">
+            {{ emailMessage }}
+          </p>
         </div>
 
         <!-- password / confirm -->
         <div class="grid md:grid-cols-2 gap-4">
           <div class="space-y-2">
-            <label class="text-sm font-medium" for="password">Password *</label>
+            <label class="text-sm font-medium" for="password">비밀번호 *</label>
             <input id="password" v-model="form.password" type="password" required
               class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Create a password" />
           </div>
           <div class="space-y-2">
-            <label class="text-sm font-medium" for="passwordConfirm">Confirm Password *</label>
+            <label class="text-sm font-medium" for="passwordConfirm">비밀번호 확인 *</label>
             <input id="passwordConfirm" v-model="form.passwordConfirm" type="password" required
               class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Confirm your password" />
             <p
@@ -86,8 +125,7 @@
         <!-- profileVisibility -->
         <div class="space-y-3 pt-2">
           <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
-            <span class="text-primary">👤</span>
-            Profile Visibility *
+            계정 공개 범위 *
           </h3>
           <div class="flex gap-4">
             <label class="flex items-center space-x-2 cursor-pointer">
@@ -102,42 +140,42 @@
             </label>
           </div>
           <p class="text-xs text-muted-foreground">
-            Public profiles can be viewed by anyone, protected profiles are only visible to approved connections
+            Public 계정은 모두에게 보여집니다.
           </p>
         </div>
 
         <!-- budget -->
         <div class="pt-2 pb-1">
           <h3 class="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <span class="text-primary">💰</span>
-            Budget Settings
+            예산 설정
           </h3>
           <div class="grid md:grid-cols-2 gap-4">
             <div class="space-y-2">
-              <label class="text-sm font-medium" for="monthlyBudget">Monthly Budget *</label>
+              <label class="text-sm font-medium" for="monthlyBudget">이번 달 예산 *</label>
               <input id="monthlyBudget" v-model="form.monthlyBudget" type="number" required
                 class="h-11 w-full border border-border rounded px-2 py-1" placeholder="500000" />
-              <p class="text-xs text-muted-foreground">Your total monthly spending limit</p>
+              <p class="text-xs text-muted-foreground">이번 달 목표 지출 비용을 입력해주세요.</p>
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium" for="triggerBudget">Alert Threshold *</label>
+              <label class="text-sm font-medium" for="triggerBudget">냠 비용 예산 *</label>
               <input id="triggerBudget" v-model="form.triggerBudget" type="number" required
                 class="h-11 w-full border border-border rounded px-2 py-1" placeholder="100000" />
-              <p class="text-xs text-muted-foreground">Get notified when spending exceeds this amount</p>
+              <p class="text-xs text-muted-foreground">냠 비용 목표를 입력해주세요.</p>
             </div>
           </div>
         </div>
 
         <div class="flex flex-col space-y-4 pt-4">
-          <button type="submit"
-            class="w-full h-11 text-base font-semibold shadow-md hover:shadow-lg transition-shadow bg-primary text-primary-foreground rounded"
+          <UiButton
+            type="submit"
+            class="w-full h-11 text-base font-semibold"
             :disabled="loading"
           >
             {{ loading ? 'Creating Account...' : 'Create Account' }}
-          </button>
+          </UiButton>
           <div class="text-center text-sm text-muted-foreground">
-            Already have an account?
-            <router-link to="/login" class="text-primary hover:text-primary/80 font-semibold">Sign in</router-link>
+            이미 계정을 가지고 있나요?
+            <router-link to="/login" class="text-primary hover:text-primary/80 font-semibold">로그인</router-link>
           </div>
         </div>
       </form>
@@ -148,19 +186,27 @@
 <script>
 import { reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import UiButton from '@/components/ui/Button.vue'
 import {
   signup as signupApi,
   checkLoginId as checkLoginIdApi,
   checkNickname as checkNicknameApi,
 } from '@/services/user.service'
+import { sendSignupCode, verifySignupCode } from '@/services/auth.service'
 
 export default {
   name: 'SignupView',
+  components: { UiButton },
   setup() {
     const router = useRouter()
 
     const loading = ref(false)
     const errorMessage = ref('')
+    const emailSending = ref(false)
+    const emailVerifying = ref(false)
+    const emailVerified = ref(false)
+    const emailMessage = ref('')
+    const emailCode = ref('')
 
     function debounce(fn, delay) {
       let timer = null
@@ -264,6 +310,10 @@ export default {
       errorMessage.value = ''
       const phoneDigits = normalizePhoneNumber(form.phoneNumber)
 
+      if (!emailVerified.value) {
+        alert('이메일 인증을 완료해주세요.')
+        return
+      }
       if (!isValidKoreanMobile(phoneDigits)) {
         alert('전화번호 형식이 올바르지 않습니다. 예) 010-1234-1234')
         return
@@ -309,6 +359,36 @@ export default {
       }
     }
 
+    const sendCode = async () => {
+      if (!form.email) return
+      emailMessage.value = ''
+      emailSending.value = true
+      try {
+        await sendSignupCode({ email: form.email })
+        emailMessage.value = '인증번호를 전송했습니다. 이메일을 확인해주세요.'
+      } catch (e) {
+        emailMessage.value = e?.response?.data?.message || '인증번호 전송에 실패했습니다.'
+      } finally {
+        emailSending.value = false
+      }
+    }
+
+    const verifyCode = async () => {
+      if (!form.email || !emailCode.value) return
+      emailMessage.value = ''
+      emailVerifying.value = true
+      try {
+        await verifySignupCode({ email: form.email, verificationCode: emailCode.value })
+        emailVerified.value = true
+        emailMessage.value = '이메일 인증이 완료되었습니다.'
+      } catch (e) {
+        emailVerified.value = false
+        emailMessage.value = e?.response?.data?.message || '인증번호가 올바르지 않습니다.'
+      } finally {
+        emailVerifying.value = false
+      }
+    }
+
     return {
       form,
       loading,
@@ -319,6 +399,13 @@ export default {
       onLoginIdInput,
       onNicknameInput,
       submit,
+      sendCode,
+      verifyCode,
+      emailSending,
+      emailVerifying,
+      emailVerified,
+      emailMessage,
+      emailCode,
     }
   },
 }

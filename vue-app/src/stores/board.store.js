@@ -12,25 +12,31 @@ export const useBoardStore = defineStore('board', {
     hasNext: true,
     sort: 'latest',
     currentBoardId: null,
+    keyword: '',
   }),
 
   actions: {
-    resetState(sort = 'latest') {
+    resetState(sort = 'latest', keyword = '') {
       this.posts = []
       this.page = 0
       this.totalPages = 0
       this.totalElements = 0
       this.hasNext = true
       this.sort = sort
+      this.keyword = keyword
     },
 
-    async loadBoardPosts(boardId, { append = false, sort } = {}) {
+    async loadBoardPosts(boardId, { append = false, sort, keyword } = {}) {
       if (this.loading) return
 
       // 보드나 정렬이 바뀌면 초기화 후 처음부터
       const sortToUse = sort || this.sort || 'latest'
-      if (!append && (this.currentBoardId !== boardId || this.sort !== sortToUse)) {
-        this.resetState(sortToUse)
+      const keywordToUse = typeof keyword === 'string' ? keyword.trim() : this.keyword || ''
+      if (
+        !append &&
+        (this.currentBoardId !== boardId || this.sort !== sortToUse || this.keyword !== keywordToUse)
+      ) {
+        this.resetState(sortToUse, keywordToUse)
         this.currentBoardId = boardId
       }
 
@@ -44,6 +50,7 @@ export const useBoardStore = defineStore('board', {
           page: nextPage,
           size: this.size,
           sort: sortToUse,
+          keyword: keywordToUse,
         })
         const data = response.data
 
@@ -55,6 +62,7 @@ export const useBoardStore = defineStore('board', {
         this.totalElements = data.totalElements
         this.hasNext = this.page < this.totalPages - 1
         this.sort = sortToUse
+        this.keyword = keywordToUse
       } catch (error) {
         console.error('게시글 목록 조회 실패', error)
         this.hasNext = false

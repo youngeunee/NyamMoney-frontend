@@ -347,13 +347,190 @@
         </UiCard>
       </div>
 
+      <div class="grid gap-6 lg:grid-cols-2">
+        <UiCard wrapperClass="border border-border">
+          <template #header>
+            <div class="px-4 pt-4 space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs text-muted-foreground">AI 리포트</p>
+                  <p class="text-sm font-semibold">월간 소비 분석</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <input
+                    v-model="monthInput"
+                    type="month"
+                    class="border border-border rounded-md p-2 text-sm bg-background text-foreground dark:bg-background dark:text-foreground [color-scheme:dark]"
+                  />
+                  <button
+                    class="px-3 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    type="button"
+                    :disabled="reportLoading.monthly"
+                    @click="requestMonthlyAnalysis"
+                  >
+                    <UiSpinner v-if="reportLoading.monthly" />
+                    <span>분석하기</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div v-if="reportError.monthly" class="px-4 text-sm text-red-500">{{ reportError.monthly }}</div>
+          <div v-if="monthlyReport" class="p-4 space-y-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">기간</span>
+              <span class="font-semibold">
+                {{ monthlyReport.year }}년 {{ monthlyReport.month }}월
+              </span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">총 지출</span>
+              <span class="font-semibold">{{ formatCurrency(monthlyReport.totalSpend) }}원</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">시발비용 / 비율</span>
+              <span class="font-semibold text-primary">
+                {{ formatCurrency(monthlyReport.impulseSpend) }}원 ·
+                {{ formatPercent(monthlyReport.impulseRatio) }}%
+              </span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">최다 지출 카테고리</span>
+              <span class="font-semibold">{{ monthlyReport.topCategory || '미분류' }}</span>
+            </div>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <div class="rounded-md border border-border/60 bg-muted/20 p-3 space-y-1">
+                <p class="text-xs text-muted-foreground">AI 요약</p>
+                <p class="text-sm leading-relaxed whitespace-pre-line">{{ monthlyReport.aiSummary }}</p>
+              </div>
+              <div class="rounded-md border border-border/60 bg-muted/20 p-3 space-y-1">
+                <p class="text-xs text-muted-foreground">감정 소비</p>
+                <p class="text-sm leading-relaxed whitespace-pre-line">{{ monthlyReport.emotionSummary }}</p>
+              </div>
+            </div>
+            <div class="rounded-md border border-border/60 bg-muted/20 p-3 space-y-1">
+              <p class="text-xs text-muted-foreground">소비 페르소나</p>
+              <p class="text-sm font-semibold">{{ monthlyReport.persona?.spendingPersona }}</p>
+              <p class="text-sm text-muted-foreground leading-relaxed">
+                {{ monthlyReport.persona?.personaReason }}
+              </p>
+            </div>
+            <div
+              v-if="monthlyReport.categoryStats && monthlyReport.categoryStats.length"
+              class="space-y-2"
+            >
+              <p class="text-xs text-muted-foreground">카테고리별 시발비용 비율</p>
+              <div
+                v-for="(stat, index) in monthlyReport.categoryStats.slice(0, 4)"
+                :key="stat.categoryId ?? stat.categoryName ?? index"
+                class="flex items-center justify-between text-sm"
+              >
+                <span class="font-medium">{{ stat.categoryName || '미분류' }}</span>
+                <div class="text-right">
+                  <p class="font-semibold">{{ formatCurrency(stat.impulseSpend ?? 0) }}원</p>
+                  <p class="text-[11px] text-muted-foreground">
+                    {{ formatPercent(stat.impulseRatio) }}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="p-4 text-sm text-muted-foreground">
+            월간 분석 결과가 없습니다. 분석하기 버튼을 눌러 불러오세요.
+          </div>
+        </UiCard>
+
+        <UiCard wrapperClass="border border-border">
+          <template #header>
+            <div class="px-4 pt-4 space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs text-muted-foreground">AI 리포트</p>
+                  <p class="text-sm font-semibold">일간 소비 분석</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <input
+                    v-model="dateInput"
+                    type="date"
+                    class="border border-border rounded-md p-2 text-sm bg-background text-foreground dark:bg-background dark:text-foreground [color-scheme:dark]"
+                  />
+                  <button
+                    class="px-3 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    type="button"
+                    :disabled="reportLoading.daily"
+                    @click="requestDailyAnalysis"
+                  >
+                    <UiSpinner v-if="reportLoading.daily" />
+                    <span>분석하기</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div v-if="reportError.daily" class="px-4 text-sm text-red-500">{{ reportError.daily }}</div>
+          <div v-if="dailyReport" class="p-4 space-y-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">기준일</span>
+              <span class="font-semibold">{{ dailyReport.date }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">총 지출</span>
+              <span class="font-semibold">{{ formatCurrency(dailyReport.totalSpend) }}원</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">시발비용 / 비율</span>
+              <span class="font-semibold text-primary">
+                {{ formatCurrency(dailyReport.impulseSpend) }}원 ·
+                {{ formatPercent(dailyReport.impulseRatio) }}%
+              </span>
+            </div>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <div class="rounded-md border border-border/60 bg-muted/20 p-3 space-y-1">
+                <p class="text-xs text-muted-foreground">소비 리듬</p>
+                <p class="text-sm leading-relaxed whitespace-pre-line">{{ dailyReport.spendingRhythm }}</p>
+              </div>
+              <div class="rounded-md border border-border/60 bg-muted/20 p-3 space-y-1">
+                <p class="text-xs text-muted-foreground">소비 밀도</p>
+                <p class="text-sm leading-relaxed whitespace-pre-line">{{ dailyReport.spendingDensity }}</p>
+              </div>
+            </div>
+            <div class="rounded-md border border-border/60 bg-muted/20 p-3 space-y-1">
+              <p class="text-xs text-muted-foreground">한줄 코멘트</p>
+              <p class="text-sm leading-relaxed whitespace-pre-line">{{ dailyReport.dailyComment }}</p>
+            </div>
+            <div
+              v-if="dailyReport.categoryStats && dailyReport.categoryStats.length"
+              class="space-y-2"
+            >
+              <p class="text-xs text-muted-foreground">카테고리별 시발비용 비율</p>
+              <div
+                v-for="(stat, index) in dailyReport.categoryStats.slice(0, 5)"
+                :key="stat.categoryId ?? stat.categoryName ?? index"
+                class="flex items-center justify-between text-sm"
+              >
+                <span class="font-medium">{{ stat.categoryName || '미분류' }}</span>
+                <div class="text-right">
+                  <p class="font-semibold">{{ formatCurrency(stat.impulseSpend ?? 0) }}원</p>
+                  <p class="text-[11px] text-muted-foreground">
+                    {{ formatPercent(stat.impulseRatio) }}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="p-4 text-sm text-muted-foreground">
+            일간 분석 결과가 없습니다. 분석하기 버튼을 눌러 불러오세요.
+          </div>
+        </UiCard>
+      </div>
+
       <div v-if="error" class="text-sm text-red-500">{{ error }}</div>
     </div>
   </Layout>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, ref } from 'vue'
+import { computed, defineComponent, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Layout from '@/components/Layout.vue'
 import ExpenseIncomeSummary from '@/components/ExpenseIncomeSummary.vue'
@@ -367,6 +544,7 @@ import {
   fetchTransactions,
 } from '@/services/transaction.service'
 import { fetchMe } from '@/services/user.service'
+import { fetchDailyReport, fetchMonthlyReport } from '@/services/report.service'
 
 const CATEGORY_LABELS: Record<number, string> = {
   1: '식사',
@@ -433,6 +611,43 @@ type CategoryBar = {
   impulse: number
 }
 
+type CategoryStat = {
+  categoryId?: number
+  categoryName?: string
+  totalSpend?: number
+  impulseSpend?: number
+  impulseRatio?: number
+}
+
+type PersonaResult = {
+  spendingPersona?: string
+  personaReason?: string
+}
+
+type MonthlyReport = {
+  year: number
+  month: number
+  totalSpend: number
+  impulseSpend: number
+  impulseRatio: number
+  topCategory?: string | null
+  categoryStats?: CategoryStat[]
+  aiSummary?: string
+  emotionSummary?: string
+  persona?: PersonaResult
+}
+
+type DailyReport = {
+  date: string
+  totalSpend: number
+  impulseSpend: number
+  impulseRatio: number
+  categoryStats?: CategoryStat[]
+  spendingRhythm?: string
+  spendingDensity?: string
+  dailyComment?: string
+}
+
 export default defineComponent({
   name: 'HomeView',
   components: {
@@ -461,12 +676,38 @@ export default defineComponent({
       return (value ?? 0).toLocaleString('ko-KR')
     }
 
+    const formatPercent = (value?: number | null) => {
+      const normalized = Number(value ?? 0)
+      const fixed = normalized.toFixed(1)
+      return fixed.endsWith('.0') ? fixed.slice(0, -2) : fixed
+    }
+
     const formatLocalDateTime = (date: Date) => {
       const pad = (n: number) => String(n).padStart(2, '0')
       return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
         date.getHours(),
       )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
     }
+
+    const formatDateInput = (date: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+    }
+
+    const formatMonthInput = (date: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`
+    }
+
+    const monthInput = ref(formatMonthInput(new Date()))
+    const dateInput = ref(formatDateInput(new Date()))
+    const monthlyReport = ref<MonthlyReport | null>(null)
+    const dailyReport = ref<DailyReport | null>(null)
+    const reportLoading = reactive<{ monthly: boolean; daily: boolean }>({
+      monthly: false,
+      daily: false,
+    })
+    const reportError = reactive<{ monthly: string; daily: string }>({ monthly: '', daily: '' })
 
     const startOfToday = () => {
       const d = new Date()
@@ -655,6 +896,45 @@ export default defineComponent({
       tooltip.value = { visible: false, x: 0, y: 0, label: '', amount: 0, percent: 0, type: '' }
     }
 
+    const buildMonthParams = (value: string) => {
+      if (!value) return {}
+      const [yearStr, monthStr] = value.split('-')
+      const year = Number(yearStr)
+      const month = Number(monthStr)
+      if (Number.isNaN(year) || Number.isNaN(month)) return {}
+      return { year, month }
+    }
+
+    const requestMonthlyAnalysis = async () => {
+      reportError.monthly = ''
+      reportLoading.monthly = true
+      try {
+        const params = buildMonthParams(monthInput.value)
+        const res = await fetchMonthlyReport(params)
+        monthlyReport.value = res.data as MonthlyReport
+      } catch (e) {
+        console.error(e)
+        reportError.monthly = '월간 분석을 불러오지 못했습니다.'
+      } finally {
+        reportLoading.monthly = false
+      }
+    }
+
+    const requestDailyAnalysis = async () => {
+      reportError.daily = ''
+      reportLoading.daily = true
+      try {
+        const params = dateInput.value ? { date: dateInput.value } : {}
+        const res = await fetchDailyReport(params)
+        dailyReport.value = res.data as DailyReport
+      } catch (e) {
+        console.error(e)
+        reportError.daily = '일간 분석을 불러오지 못했습니다.'
+      } finally {
+        reportLoading.daily = false
+      }
+    }
+
     const resolveTransactionType = (tx: TransactionItem): TransactionItem['type'] => {
       const raw = (tx.type || tx.transactionType || '').toString().toLowerCase()
       if (tx.isRefund || raw === 'refund') return 'refund'
@@ -712,7 +992,9 @@ export default defineComponent({
       }
     }
 
-    onMounted(loadDashboard)
+    onMounted(() => {
+      loadDashboard()
+    })
 
     const goAnalytics = () => {
       router.push({ name: 'Analytics' })
@@ -742,9 +1024,18 @@ export default defineComponent({
       recentTransactions,
       transactionCount,
       formatCurrency,
+      formatPercent,
       lastUpdated,
       goAnalytics,
       goCreate,
+      monthInput,
+      dateInput,
+      monthlyReport,
+      dailyReport,
+      reportLoading,
+      reportError,
+      requestMonthlyAnalysis,
+      requestDailyAnalysis,
       monthlyBudget,
       triggerBudget,
       expenseUsage,
