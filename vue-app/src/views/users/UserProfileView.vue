@@ -558,6 +558,7 @@ const toggleFollow = async () => {
     console.error('follow toggle failed', err)
     await loadRelationship()
   } finally {
+    await loadFollowCounts()
     loadingFollow.value = false
   }
 }
