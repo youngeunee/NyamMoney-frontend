@@ -114,7 +114,7 @@ export default defineComponent({
 
     const navigation = [
       { name: '대시보드', href: '/dashboard', icon: '🏠' },
-      { name: '분석', href: '/analytics', icon: '📊' },
+      { name: '거래 내역', href: '/analytics', icon: '📊' },
       { name: '게시판', href: '/boards', icon: '🏢' },
       { name: '챌린지', href: '/challenges', icon: '🏃' },
       // { name: 'Transactions', href: '/transactions', icon: '💼' },

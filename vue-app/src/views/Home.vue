@@ -3,8 +3,8 @@
     <div class="p-6 space-y-6">
       <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 class="text-3xl font-bold">Dashboard</h1>
-          <p class="text-sm text-muted-foreground">오늘 소비와 시발비용을 한눈에 확인하세요.</p>
+          <h1 class="text-3xl font-bold">대시보드</h1>
+          <p class="text-sm text-muted-foreground">오늘 소비와 냠비용을 한눈에 확인하세요.</p>
         </div>
         <div class="text-xs text-muted-foreground">
           업데이트: {{ lastUpdated }}
@@ -24,7 +24,7 @@
 
         <UiCard>
           <template #header>
-            <div class="px-4 pt-4 text-xs text-muted-foreground">오늘 시발비용</div>
+            <div class="px-4 pt-4 text-xs text-muted-foreground">오늘 냠비용</div>
           </template>
           <div class="space-y-1">
             <div class="text-2xl font-semibold text-primary">{{ formatCurrency(todayImpulse) }}원</div>
@@ -44,7 +44,7 @@
 
         <UiCard>
           <template #header>
-            <div class="px-4 pt-4 text-xs text-muted-foreground">이번 달 시발비용</div>
+            <div class="px-4 pt-4 text-xs text-muted-foreground">이번 달 비용</div>
           </template>
           <div class="space-y-1">
             <div class="text-2xl font-semibold text-primary">{{ formatCurrency(monthlyImpulse) }}원</div>
@@ -68,7 +68,7 @@
           <div class="px-4 pt-4 flex items-center justify-between">
             <div>
               <p class="text-xs text-muted-foreground">이번 달 예산 사용률</p>
-              <p class="text-sm font-semibold">소비 & 시발비용</p>
+              <p class="text-sm font-semibold">소비 & 냠비용</p>
             </div>
             <div v-if="loading" class="text-xs text-muted-foreground flex items-center gap-2">
               <UiSpinner /> 불러오는 중
@@ -99,7 +99,7 @@
               </svg>
             </div>
             <div class="space-y-1 text-sm">
-              <p class="font-semibold text-foreground">이번 달 시발비용</p>
+              <p class="font-semibold text-foreground">이번 달 냠비용</p>
               <p class="text-muted-foreground">
                 {{ formatCurrency(monthlyImpulse) }}원 / {{ formatCurrency(triggerBudget || 0) }}원
               </p>
@@ -142,7 +142,7 @@
           <div class="px-4 pt-4 flex items-center justify-between">
             <div>
               <p class="text-xs text-muted-foreground">오늘 카테고리 비율</p>
-              <p class="text-sm font-semibold">총 지출 vs. 시발비용</p>
+              <p class="text-sm font-semibold">총 지출 vs. 냠비용</p>
             </div>
             <div v-if="loading" class="text-xs text-muted-foreground flex items-center gap-2">
               <UiSpinner /> 불러오는 중
@@ -206,7 +206,7 @@
             </div>
           </div>
           <div class="space-y-3">
-            <p class="text-sm font-semibold">시발비용</p>
+            <p class="text-sm font-semibold">냠비용</p>
             <div class="flex items-center gap-4">
               <div class="relative inline-block donut-wrapper">
                 <svg viewBox="0 0 36 36" class="h-32 w-32">
@@ -256,7 +256,7 @@
                     </div>
                   </div>
                 </template>
-                <p v-else class="text-sm text-muted-foreground">시발비용 지출이 없습니다.</p>
+                <p v-else class="text-sm text-muted-foreground">냠비용 지출이 없습니다.</p>
               </div>
             </div>
           </div>
@@ -339,7 +339,7 @@
             >
               <div class="flex flex-col">
                 <span class="font-medium">{{ item.label }}</span>
-                <span class="text-xs text-muted-foreground">시발비용 {{ formatCurrency(item.impulse ?? 0) }}원</span>
+                <span class="text-xs text-muted-foreground">냠비용 {{ formatCurrency(item.impulse ?? 0) }}원</span>
               </div>
               <span class="font-semibold">{{ formatCurrency(item.expense ?? 0) }}원</span>
             </div>
@@ -388,7 +388,7 @@
               <span class="font-semibold">{{ formatCurrency(monthlyReport.totalSpend) }}원</span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">시발비용 / 비율</span>
+              <span class="text-muted-foreground">냠비용 / 비율</span>
               <span class="font-semibold text-primary">
                 {{ formatCurrency(monthlyReport.impulseSpend) }}원 ·
                 {{ formatPercent(monthlyReport.impulseRatio) }}%
@@ -419,7 +419,7 @@
               v-if="monthlyReport.categoryStats && monthlyReport.categoryStats.length"
               class="space-y-2"
             >
-              <p class="text-xs text-muted-foreground">카테고리별 시발비용 비율</p>
+              <p class="text-xs text-muted-foreground">카테고리별 냠비용 비율</p>
               <div
                 v-for="(stat, index) in monthlyReport.categoryStats.slice(0, 4)"
                 :key="stat.categoryId ?? stat.categoryName ?? index"
@@ -478,7 +478,7 @@
               <span class="font-semibold">{{ formatCurrency(dailyReport.totalSpend) }}원</span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">시발비용 / 비율</span>
+              <span class="text-muted-foreground">냠비용 / 비율</span>
               <span class="font-semibold text-primary">
                 {{ formatCurrency(dailyReport.impulseSpend) }}원 ·
                 {{ formatPercent(dailyReport.impulseRatio) }}%
@@ -502,7 +502,7 @@
               v-if="dailyReport.categoryStats && dailyReport.categoryStats.length"
               class="space-y-2"
             >
-              <p class="text-xs text-muted-foreground">카테고리별 시발비용 비율</p>
+              <p class="text-xs text-muted-foreground">카테고리별 냠비용 비율</p>
               <div
                 v-for="(stat, index) in dailyReport.categoryStats.slice(0, 5)"
                 :key="stat.categoryId ?? stat.categoryName ?? index"

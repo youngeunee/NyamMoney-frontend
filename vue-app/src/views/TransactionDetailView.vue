@@ -41,7 +41,7 @@
             </div>
             <div class="flex items-center gap-2">
               <span v-if="detail?.impulseFlag" class="px-2 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
-                시발비용
+                냠비용
               </span>
               <span v-if="detail?.isRefund" class="px-2 py-1 rounded-full bg-secondary/10 text-secondary text-[11px] font-semibold">
                 환불

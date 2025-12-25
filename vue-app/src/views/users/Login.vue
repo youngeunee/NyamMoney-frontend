@@ -9,7 +9,7 @@
           </div>
         </div>
         <div class="text-3xl font-bold text-foreground">
-          YumMoney
+          냠 머니
         </div>
         <!-- <div class="text-base text-muted-foreground">
           현명한 소비생활

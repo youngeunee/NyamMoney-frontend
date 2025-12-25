@@ -91,7 +91,7 @@
           <div class="flex flex-wrap gap-4 text-sm">
             <label class="inline-flex items-center gap-2">
               <input v-model="form.impulseFlag" type="checkbox" class="accent-primary" />
-              <span>시발비용</span>
+              <span>냠비용</span>
             </label>
             <label class="inline-flex items-center gap-2">
               <input v-model="form.isRefund" type="checkbox" class="accent-primary" />

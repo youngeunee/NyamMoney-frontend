@@ -134,7 +134,7 @@
                   v-if="tx.impulseFlag"
                   class="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[11px] font-semibold"
                 >
-                  시발비용
+                냠비용
                 </span>
                 <span
                   v-if="tx.isRefund"

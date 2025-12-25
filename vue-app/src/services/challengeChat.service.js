@@ -17,10 +17,10 @@ export function connectChallengeChat(challengeId, onMessage) {
 
     reconnectDelay: 5000,
 
-    debug: (msg) => console.log('[STOMP DEBUG]', msg),
-    onWebSocketClose: (e) => console.log('[WS] close', e.code, e.reason),
-    onWebSocketError: (e) => console.log('[WS] error', e),
-    onStompError: (frame) => console.log('[STOMP ERROR]', frame.headers, frame.body),
+    // debug: (msg) => console.log('[STOMP DEBUG]', msg),
+    // onWebSocketClose: (e) => console.log('[WS] close', e.code, e.reason),
+    // onWebSocketError: (e) => console.log('[WS] error', e),
+    // onStompError: (frame) => console.log('[STOMP ERROR]', frame.headers, frame.body),
 
     onConnect: () => {
       console.log('[WS] connected')

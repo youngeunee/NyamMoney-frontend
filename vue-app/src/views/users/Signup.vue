@@ -30,7 +30,7 @@
           <div class="space-y-2">
             <label class="text-sm font-medium" for="nickname">닉네임 *</label>
             <input id="nickname" v-model="form.nickname" @input="onNicknameInput" type="text" required
-              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Your display name" />
+              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="닉네임을 입력하세요." />
             <p
               v-if="nicknameCheck.message || nicknameCheck.loading"
               class="text-xs mt-1"
@@ -46,7 +46,7 @@
           <div class="space-y-2">
             <label class="text-sm font-medium" for="name">이름 *</label>
             <input id="name" v-model="form.name" type="text" required
-              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Your name" />
+              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="이름을 입력하세요." />
           </div>
           <div class="space-y-2">
             <label class="text-sm font-medium" for="phoneNumber">핸드폰 번호 *</label>
@@ -106,12 +106,12 @@
           <div class="space-y-2">
             <label class="text-sm font-medium" for="password">비밀번호 *</label>
             <input id="password" v-model="form.password" type="password" required
-              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Create a password" />
+              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="비밀번호를 입력하세요." />
           </div>
           <div class="space-y-2">
             <label class="text-sm font-medium" for="passwordConfirm">비밀번호 확인 *</label>
             <input id="passwordConfirm" v-model="form.passwordConfirm" type="password" required
-              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="Confirm your password" />
+              class="h-11 w-full border border-border rounded px-2 py-1" placeholder="비밀번호를 한 번 더 입력하세요." />
             <p
               v-if="passwordsMatch !== null"
               class="text-xs mt-1"
