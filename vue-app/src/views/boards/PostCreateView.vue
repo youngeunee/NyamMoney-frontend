@@ -86,9 +86,9 @@ export default {
     const boardTitle = computed(() => {
       const map = {
         1: '자유게시판',
-        2: 'Projects 게시판',
-        3: 'Transactions 게시판',
-        4: 'Invoices 게시판',
+        2: '질문 게시판',
+        3: '팁 게시판',
+        4: '공지 게시판',
       }
       return map[props.boardId] || '게시판'
     })
