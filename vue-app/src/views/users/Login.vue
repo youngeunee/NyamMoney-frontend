@@ -56,7 +56,7 @@
           </label>
 
           <router-link
-            to="#"
+            to="/password-reset"
             class="text-sm text-primary hover:text-primary/80 font-medium"
           >
             비밀번호를 잊으셨나요?
