@@ -6,12 +6,8 @@ let stompClient = null
 
 export function connectChallengeChat(challengeId, onMessage) {
   const token = Cookies.get('accessToken')
-  const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-  const wsHost = import.meta.env.VITE_WS_HOST || '54.180.94.25'
-  const defaultPort = wsHost.includes(':') ? '' : (import.meta.env.VITE_WS_PORT ?? '8080')
-  const wsPort = defaultPort ? `:${defaultPort}` : ''
-  const wsPath = import.meta.env.VITE_WS_CHALLENGE_PATH || '/ws-challenge-chat'
-  const wsUrl = `${wsProtocol}://${wsHost}${wsPort}${wsPath}`
+  // 고정 도메인으로 HTTPS 기반 WebSocket 연결
+  const wsUrl = 'wss://api.nyammoney.kr/ws-challenge-chat'
 
   stompClient = new Client({
     webSocketFactory: () =>
