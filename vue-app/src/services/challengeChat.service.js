@@ -6,10 +6,16 @@ let stompClient = null
 
 export function connectChallengeChat(challengeId, onMessage) {
   const token = Cookies.get('accessToken')
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  const wsHost = import.meta.env.VITE_WS_HOST || '54.180.94.25'
+  const defaultPort = wsHost.includes(':') ? '' : (import.meta.env.VITE_WS_PORT ?? '8080')
+  const wsPort = defaultPort ? `:${defaultPort}` : ''
+  const wsPath = import.meta.env.VITE_WS_CHALLENGE_PATH || '/ws-challenge-chat'
+  const wsUrl = `${wsProtocol}://${wsHost}${wsPort}${wsPath}`
 
   stompClient = new Client({
     webSocketFactory: () =>
-      new WebSocket('ws://54.180.94.25:8080/ws-challenge-chat'),
+      new WebSocket(wsUrl),
 
     connectHeaders: {
       Authorization: `Bearer ${token}`
