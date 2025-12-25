@@ -12,7 +12,7 @@ export default defineConfig({
 
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',  // Spring Boot 서버
+        target: 'http://54.180.94.25:8080',   // Spring Boot 서버
         changeOrigin: true,
         secure: false,
       },
